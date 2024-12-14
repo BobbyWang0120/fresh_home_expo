@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList, Image, Dimensions } from 'react-native';
 import { categories, products, Category, Product } from '../../data/categories';
-import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const PRODUCT_WIDTH = (width - 40) / 2;
 
 export default function CategoriesScreen() {
+  const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
@@ -50,22 +51,17 @@ export default function CategoriesScreen() {
 
   return (
     <>
-      <StatusBar style="dark" />
       <Stack.Screen
         options={{
-          title: "Categories",
-          headerShadowVisible: true,
-          headerStyle: {
-            backgroundColor: '#fff',
-          },
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#333',
-          },
+          headerShown: false,
         }}
       />
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Categories</Text>
+        </View>
+
         {/* Categories List */}
         <ScrollView 
           horizontal 
@@ -162,8 +158,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#fff',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+  },
   categoriesContainer: {
-    maxHeight: 90,
+    maxHeight: 100,
+    paddingTop: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
