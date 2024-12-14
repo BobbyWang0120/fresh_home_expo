@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, TextInput, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, TextInput, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CarouselBanner } from '@/components/home/CarouselBanner';
 import { CategorySection } from '@/components/home/CategorySection';
 import { PopularProducts } from '@/components/home/PopularProducts';
+import { HomeHeader } from '@/components/home/HomeHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { StatusBar } from 'expo-status-bar';
@@ -13,6 +14,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <ThemedView style={styles.container}>
+        <HomeHeader />
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
@@ -24,7 +26,10 @@ export default function HomeScreen() {
           </View>
         </View>
         
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           <CarouselBanner />
           <CategorySection />
           <PopularProducts />
@@ -65,5 +70,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#333',
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
 });
