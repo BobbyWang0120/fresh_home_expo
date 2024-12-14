@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // 模拟购物车数据
 const cartItems = [
@@ -31,6 +32,7 @@ const cartItems = [
 
 export default function CartScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>(
@@ -73,6 +75,14 @@ export default function CartScreen() {
       <Stack.Screen
         options={{
           title: "Shopping Cart",
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()}
+              style={styles.headerButton}
+            >
+              <Ionicons name="chevron-back" size={24} color="#333" />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <TouchableOpacity 
               onPress={() => setIsEditing(!isEditing)}
@@ -143,7 +153,7 @@ export default function CartScreen() {
         </ScrollView>
 
         {/* Bottom Bar */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + 10, 20) }]}>
           <TouchableOpacity 
             style={styles.selectAllButton}
             onPress={toggleSelectAll}
@@ -241,7 +251,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    paddingTop: 15,
+    paddingHorizontal: 15,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     backgroundColor: '#fff',
