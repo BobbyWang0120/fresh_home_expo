@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 // 模拟购物车数据
@@ -68,96 +68,113 @@ export default function CartScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <>
       <StatusBar style="dark" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
-        <TouchableOpacity onPress={() => setIsEditing(!isEditing)} style={styles.headerButton}>
-          <Ionicons name={isEditing ? "checkmark" : "create-outline"} size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Cart Items List */}
-      <ScrollView style={styles.cartList}>
-        {cartItems.map(item => (
-          <View key={item.id} style={styles.cartItem}>
-            <TouchableOpacity
-              onPress={() => toggleSelectItem(item.id)}
-              style={styles.checkbox}
+      <Stack.Screen
+        options={{
+          title: "Shopping Cart",
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => setIsEditing(!isEditing)}
+              style={styles.headerButton}
             >
-              <Ionicons
-                name={selectedItems.includes(item.id) ? "checkbox" : "square-outline"}
-                size={24}
-                color="#4CAF50"
+              <Ionicons 
+                name={isEditing ? "checkmark" : "create-outline"} 
+                size={24} 
+                color="#333" 
               />
             </TouchableOpacity>
-            
-            <Image
-              source={{ uri: 'https://via.placeholder.com/100' }}
-              style={styles.productImage}
-            />
-            
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={styles.productPrice}>${item.price}/{item.unit}</Text>
+          ),
+          headerShadowVisible: true,
+          headerStyle: {
+            backgroundColor: '#fff',
+          },
+          headerTitleStyle: {
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#333',
+          },
+        }}
+      />
+      
+      <View style={styles.container}>
+        {/* Cart Items List */}
+        <ScrollView style={styles.cartList}>
+          {cartItems.map(item => (
+            <View key={item.id} style={styles.cartItem}>
+              <TouchableOpacity
+                onPress={() => toggleSelectItem(item.id)}
+                style={styles.checkbox}
+              >
+                <Ionicons
+                  name={selectedItems.includes(item.id) ? "checkbox" : "square-outline"}
+                  size={24}
+                  color="#4CAF50"
+                />
+              </TouchableOpacity>
               
-              <View style={styles.quantityControl}>
-                <TouchableOpacity 
-                  onPress={() => updateQuantity(item.id, -1)}
-                  style={styles.quantityButton}
-                >
-                  <Ionicons name="remove" size={20} color="#666" />
-                </TouchableOpacity>
-                <Text style={styles.quantityText}>{quantities[item.id]}</Text>
-                <TouchableOpacity 
-                  onPress={() => updateQuantity(item.id, 1)}
-                  style={styles.quantityButton}
-                >
-                  <Ionicons name="add" size={20} color="#666" />
-                </TouchableOpacity>
+              <Image
+                source={{ uri: 'https://via.placeholder.com/100' }}
+                style={styles.productImage}
+              />
+              
+              <View style={styles.productInfo}>
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productPrice}>${item.price}/{item.unit}</Text>
+                
+                <View style={styles.quantityControl}>
+                  <TouchableOpacity 
+                    onPress={() => updateQuantity(item.id, -1)}
+                    style={styles.quantityButton}
+                  >
+                    <Ionicons name="remove" size={20} color="#666" />
+                  </TouchableOpacity>
+                  <Text style={styles.quantityText}>{quantities[item.id]}</Text>
+                  <TouchableOpacity 
+                    onPress={() => updateQuantity(item.id, 1)}
+                    style={styles.quantityButton}
+                  >
+                    <Ionicons name="add" size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
+          ))}
+        </ScrollView>
+
+        {/* Bottom Bar */}
+        <View style={styles.bottomBar}>
+          <TouchableOpacity 
+            style={styles.selectAllButton}
+            onPress={toggleSelectAll}
+          >
+            <Ionicons
+              name={selectedItems.length === cartItems.length ? "checkbox" : "square-outline"}
+              size={24}
+              color="#4CAF50"
+            />
+            <Text style={styles.selectAllText}>Select All</Text>
+          </TouchableOpacity>
+
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>Total: </Text>
+            <Text style={styles.totalPrice}>${getTotalPrice().toFixed(2)}</Text>
           </View>
-        ))}
-      </ScrollView>
 
-      {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity 
-          style={styles.selectAllButton}
-          onPress={toggleSelectAll}
-        >
-          <Ionicons
-            name={selectedItems.length === cartItems.length ? "checkbox" : "square-outline"}
-            size={24}
-            color="#4CAF50"
-          />
-          <Text style={styles.selectAllText}>Select All</Text>
-        </TouchableOpacity>
-
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total: </Text>
-          <Text style={styles.totalPrice}>${getTotalPrice().toFixed(2)}</Text>
+          <TouchableOpacity 
+            style={[
+              styles.checkoutButton,
+              selectedItems.length === 0 && styles.checkoutButtonDisabled
+            ]}
+            disabled={selectedItems.length === 0}
+          >
+            <Text style={styles.checkoutButtonText}>
+              Checkout ({selectedItems.length})
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity 
-          style={[
-            styles.checkoutButton,
-            selectedItems.length === 0 && styles.checkoutButtonDisabled
-          ]}
-          disabled={selectedItems.length === 0}
-        >
-          <Text style={styles.checkoutButtonText}>
-            Checkout ({selectedItems.length})
-          </Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </>
   );
 }
 
@@ -166,24 +183,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    paddingTop: 60,
-    paddingBottom: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
   headerButton: {
     padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    marginRight: 8,
   },
   cartList: {
     flex: 1,
