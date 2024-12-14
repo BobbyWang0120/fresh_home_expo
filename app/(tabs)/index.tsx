@@ -1,13 +1,31 @@
-import { StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, ScrollView, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { CarouselBanner } from '@/components/home/CarouselBanner';
+import { CategorySection } from '@/components/home/CategorySection';
+import { PopularProducts } from '@/components/home/PopularProducts';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText style={styles.title}>Fresh Home</ThemedText>
-      <ThemedText style={styles.subtitle}>主页</ThemedText>
-      <ThemedText style={styles.description}>欢迎使用Fresh Home生鲜配送平台</ThemedText>
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search fresh products..."
+            placeholderTextColor="#999"
+          />
+        </View>
+      </View>
+      
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <CarouselBanner />
+        <CategorySection />
+        <PopularProducts />
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -15,21 +33,28 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  searchContainer: {
+    padding: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  searchBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    height: 40,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  searchIcon: {
+    marginRight: 10,
   },
-  subtitle: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  description: {
+  searchInput: {
+    flex: 1,
     fontSize: 16,
-    textAlign: 'center',
+    color: '#333',
   },
 });
