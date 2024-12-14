@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -15,15 +14,15 @@ export default function WelcomeScreen() {
   }, []);
 
   return (
-    <LinearGradient
-      colors={['#4CAF50', '#2E7D32']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Fresh Home</Text>
-        <Text style={styles.subtitle}>加州生鲜配送</Text>
+        <View style={styles.logoContainer}>
+          <Text style={styles.title}>Fresh Home</Text>
+          <Text style={styles.subtitle}>California Fresh Delivery</Text>
+        </View>
+        <View style={styles.decorativeLine} />
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -32,19 +31,33 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   content: {
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
-    fontSize: 42,
+    fontSize: 48,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 10,
+    color: '#4CAF50', // 更明亮的绿色
+    marginBottom: 12,
+    letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    fontSize: 20,
+    color: '#66BB6A', // 更浅的绿色
+    letterSpacing: 0.5,
+  },
+  decorativeLine: {
+    width: 80,
+    height: 3,
+    backgroundColor: '#81C784', // 最浅的绿色
+    borderRadius: 1.5,
+    marginTop: 24,
   },
 });
