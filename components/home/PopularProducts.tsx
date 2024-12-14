@@ -7,21 +7,21 @@ const popularProducts = [
     name: 'Fresh Salmon',
     price: 25.99,
     unit: 'lb',
-    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=2070&auto=format&fit=crop',
+    image: 'https://plus.unsplash.com/premium_photo-1723478431094-4854c4555fc2?q=80&w=3227&auto=format&fit=crop',
   },
   {
     id: '2',
     name: 'King Crab',
     price: 45.99,
     unit: 'lb',
-    image: 'https://images.unsplash.com/photo-1550747545-c896b5f89ff7?q=80&w=2067&auto=format&fit=crop',
+    image: 'https://plus.unsplash.com/premium_photo-1722775045882-98916a9cfb0b?q=80&w=3270&auto=format&fit=crop',
   },
   {
     id: '3',
     name: 'Fresh Shrimp',
     price: 18.99,
     unit: 'lb',
-    image: 'https://images.unsplash.com/photo-1565680018434-b583b57b4f34?q=80&w=2070&auto=format&fit=crop',
+    image: 'https://plus.unsplash.com/premium_photo-1709146097755-f5f9ba107de8?q=80&w=3269&auto=format&fit=crop',
   },
 ];
 

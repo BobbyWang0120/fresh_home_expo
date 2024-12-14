@@ -7,15 +7,15 @@ const { width } = Dimensions.get('window');
 const bannerData = [
   {
     id: '1',
-    image: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?q=80&w=2070&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?q=80&w=3270&auto=format&fit=crop',
   },
   {
     id: '2',
-    image: 'https://images.unsplash.com/photo-1498579809087-ef1e558fd1da?q=80&w=2070&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?q=80&w=2074&auto=format&fit=crop',
   },
   {
     id: '3',
-    image: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?q=80&w=2074&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1588159482223-dbecdae250a7?q=80&w=3270&auto=format&fit=crop',
   },
 ];
 
