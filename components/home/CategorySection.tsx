@@ -1,26 +1,30 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
 const categories = [
   {
     id: '1',
-    name: 'Seafood',
-    icon: '🦐',
+    name: 'Fish',
+    icon: '🐟',
+    color: '#4A90E2',
   },
   {
     id: '2',
-    name: 'Vegetables',
-    icon: '🥬',
+    name: 'Shellfish',
+    icon: '🦐',
+    color: '#E17055',
   },
   {
     id: '3',
-    name: 'Fruits',
-    icon: '🍎',
+    name: 'Mollusks',
+    icon: '🦪',
+    color: '#00B894',
   },
   {
     id: '4',
-    name: 'Meat',
-    icon: '🥩',
+    name: 'Delicacies',
+    icon: '🦑',
+    color: '#FDCB6E',
   },
 ];
 
@@ -35,7 +39,7 @@ export function CategorySection() {
             style={styles.categoryItem}
             onPress={() => {}}
           >
-            <View style={styles.iconContainer}>
+            <View style={[styles.iconContainer, { backgroundColor: `${category.color}20` }]}>
               <Text style={styles.categoryIcon}>{category.icon}</Text>
             </View>
             <Text style={styles.categoryName}>{category.name}</Text>
@@ -69,14 +73,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 50,
     height: 50,
-    backgroundColor: '#f0f0f0',
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   categoryIcon: {
-    fontSize: 24,
+    fontSize: 26,
   },
   categoryName: {
     fontSize: 12,
