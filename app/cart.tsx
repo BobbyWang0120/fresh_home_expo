@@ -34,7 +34,7 @@ export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>(cartItems.map(item => item.id));
   const [quantities, setQuantities] = useState<Record<string, number>>(
     Object.fromEntries(cartItems.map(item => [item.id, item.quantity]))
   );
