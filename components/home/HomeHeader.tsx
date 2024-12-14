@@ -21,7 +21,7 @@ export function HomeHeader() {
         <View style={styles.cartContainer}>
           <Ionicons name="cart-outline" size={24} color="#333" />
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>2</Text>
+            <Text style={styles.badgeText}>3</Text>
           </View>
         </View>
       </TouchableOpacity>
