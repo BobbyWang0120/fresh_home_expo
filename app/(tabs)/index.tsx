@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, View, ScrollView, TextInput, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, ScrollView, SafeAreaView, TextInput, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CarouselBanner } from '@/components/home/CarouselBanner';
 import { CategorySection } from '@/components/home/CategorySection';
@@ -8,32 +8,43 @@ import { HomeHeader } from '@/components/home/HomeHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { StatusBar } from 'expo-status-bar';
+import { SearchHistory } from '@/components/home/SearchHistory';
+import { SearchBar } from '@/components/home/SearchBar';
 
 export default function HomeScreen() {
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  const handleSearchFocus = () => {
+    setIsSearchFocused(true);
+  };
+
+  const handleSearchBlur = () => {
+    setIsSearchFocused(false);
+    Keyboard.dismiss();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <ThemedView style={styles.container}>
         <HomeHeader />
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search fresh products..."
-              placeholderTextColor="#999"
-            />
-          </View>
-        </View>
-        
-        <ScrollView 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <CarouselBanner />
-          <CategorySection />
-          <PopularProducts />
-        </ScrollView>
+        <SearchBar 
+          onFocus={handleSearchFocus}
+          onBack={handleSearchBlur}
+          isSearchMode={isSearchFocused}
+        />
+        {isSearchFocused ? (
+          <SearchHistory />
+        ) : (
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            <CarouselBanner />
+            <CategorySection />
+            <PopularProducts />
+          </ScrollView>
+        )}
       </ThemedView>
     </SafeAreaView>
   );
@@ -47,29 +58,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  searchContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    height: 44,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
   },
   scrollContent: {
     paddingBottom: 20,
