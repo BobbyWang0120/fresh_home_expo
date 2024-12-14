@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
 const categories = [
+  // 第一行
   {
     id: '1',
     name: 'Fish',
@@ -26,25 +27,61 @@ const categories = [
     icon: '🦑',
     color: '#FDCB6E',
   },
+  // 第二行
+  {
+    id: '5',
+    name: 'Lobster',
+    icon: '🦞',
+    color: '#FF6B6B',
+  },
+  {
+    id: '6',
+    name: 'Octopus',
+    icon: '🐙',
+    color: '#A8E6CF',
+  },
+  {
+    id: '7',
+    name: 'Crab',
+    icon: '🦀',
+    color: '#FFB6B9',
+  },
+  {
+    id: '8',
+    name: 'Caviar',
+    icon: '🫧',
+    color: '#957DAD',
+  },
 ];
 
 export function CategorySection() {
+  // 将分类分成两行
+  const firstRow = categories.slice(0, 4);
+  const secondRow = categories.slice(4);
+
+  const renderRow = (items: typeof categories) => (
+    <View style={styles.categoryRow}>
+      {items.map((category) => (
+        <TouchableOpacity
+          key={category.id}
+          style={styles.categoryItem}
+          onPress={() => {}}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: `${category.color}20` }]}>
+            <Text style={styles.categoryIcon}>{category.icon}</Text>
+          </View>
+          <Text style={styles.categoryName}>{category.name}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Categories</Text>
       <View style={styles.categoryGrid}>
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category.id}
-            style={styles.categoryItem}
-            onPress={() => {}}
-          >
-            <View style={[styles.iconContainer, { backgroundColor: `${category.color}20` }]}>
-              <Text style={styles.categoryIcon}>{category.icon}</Text>
-            </View>
-            <Text style={styles.categoryName}>{category.name}</Text>
-          </TouchableOpacity>
-        ))}
+        {renderRow(firstRow)}
+        {renderRow(secondRow)}
       </View>
     </View>
   );
@@ -61,14 +98,15 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   categoryGrid: {
+    gap: 15,
+  },
+  categoryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   categoryItem: {
     width: '23%',
     alignItems: 'center',
-    marginBottom: 15,
   },
   iconContainer: {
     width: 50,
