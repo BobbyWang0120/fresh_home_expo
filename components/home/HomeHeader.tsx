@@ -1,8 +1,11 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export function HomeHeader() {
+  const router = useRouter();
+
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.locationButton} onPress={() => {}}>
@@ -11,7 +14,10 @@ export function HomeHeader() {
         <Ionicons name="chevron-down" size={16} color="#666" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.cartButton} onPress={() => {}}>
+      <TouchableOpacity 
+        style={styles.cartButton}
+        onPress={() => router.push('/cart')}
+      >
         <View style={styles.cartContainer}>
           <Ionicons name="cart-outline" size={24} color="#333" />
           <View style={styles.badge}>
