@@ -43,9 +43,11 @@ export function PopularProducts() {
             />
             <View style={styles.productInfo}>
               <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.productPrice}>
-                ${product.price}/{product.unit}
-              </Text>
+              <View style={styles.priceContainer}>
+                <Text style={styles.currencySymbol}>$</Text>
+                <Text style={styles.productPrice}>{product.price}</Text>
+                <Text style={styles.unitText}>/{product.unit}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         ))}
@@ -56,7 +58,9 @@ export function PopularProducts() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 15,
+    paddingTop: 15,
+    paddingHorizontal: 15,
+    paddingBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
@@ -66,12 +70,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingRight: 15,
+    paddingBottom: 5,
   },
   productCard: {
     width: 160,
     marginRight: 15,
     backgroundColor: '#fff',
     borderRadius: 12,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -80,6 +86,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   productImage: {
     width: '100%',
@@ -89,16 +97,32 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     padding: 12,
+    backgroundColor: '#f8f8f8',  
   },
   productName: {
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  productPrice: {
-    fontSize: 14,
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  currencySymbol: {
+    fontSize: 12,
     color: '#4CAF50',
     fontWeight: '600',
+    marginRight: 1,
+  },
+  productPrice: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  unitText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 1,
   },
 });
