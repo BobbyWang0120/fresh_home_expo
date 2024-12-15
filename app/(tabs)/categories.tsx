@@ -63,80 +63,82 @@ export default function CategoriesScreen() {
         </View>
 
         {/* Categories List */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          <TouchableOpacity
-            style={[
-              styles.categoryButton,
-              selectedCategory === 'all' && styles.categoryButtonActive
-            ]}
-            onPress={() => handleCategoryPress(null)}
+        <View style={styles.categoriesWrapper}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesContainer}
+            contentContainerStyle={styles.categoriesContent}
           >
-            <Text style={styles.categoryIcon}>🌊</Text>
-            <Text style={[
-              styles.categoryName,
-              selectedCategory === 'all' && styles.categoryNameActive
-            ]}>All</Text>
-          </TouchableOpacity>
-          {categories.map((category) => (
             <TouchableOpacity
-              key={category.id}
               style={[
                 styles.categoryButton,
-                selectedCategory === category.id && styles.categoryButtonActive
+                selectedCategory === 'all' && styles.categoryButtonActive
               ]}
-              onPress={() => handleCategoryPress(category)}
+              onPress={() => handleCategoryPress(null)}
             >
-              <Text style={styles.categoryIcon}>{category.icon}</Text>
               <Text style={[
                 styles.categoryName,
-                selectedCategory === category.id && styles.categoryNameActive
-              ]}>{category.name}</Text>
+                selectedCategory === 'all' && styles.categoryNameActive
+              ]}>All</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Subcategories */}
-        {currentCategory && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.subcategoriesContainer}
-            contentContainerStyle={styles.subcategoriesContent}
-          >
-            <TouchableOpacity
-              style={[
-                styles.subcategoryButton,
-                selectedSubcategory === 'all' && styles.subcategoryButtonActive
-              ]}
-              onPress={() => setSelectedSubcategory('all')}
-            >
-              <Text style={[
-                styles.subcategoryName,
-                selectedSubcategory === 'all' && styles.subcategoryNameActive
-              ]}>All {currentCategory.name}</Text>
-            </TouchableOpacity>
-            {currentCategory.subcategories.map((subcategory) => (
+            {categories.map((category) => (
               <TouchableOpacity
-                key={subcategory.id}
+                key={category.id}
                 style={[
-                  styles.subcategoryButton,
-                  selectedSubcategory === subcategory.id && styles.subcategoryButtonActive
+                  styles.categoryButton,
+                  selectedCategory === category.id && styles.categoryButtonActive
                 ]}
-                onPress={() => setSelectedSubcategory(subcategory.id)}
+                onPress={() => handleCategoryPress(category)}
               >
                 <Text style={[
-                  styles.subcategoryName,
-                  selectedSubcategory === subcategory.id && styles.subcategoryNameActive
-                ]}>{subcategory.name}</Text>
+                  styles.categoryName,
+                  selectedCategory === category.id && styles.categoryNameActive
+                ]}>{category.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
-        )}
+
+          {/* Subcategories */}
+          <View style={styles.subcategoriesWrapper}>
+            {currentCategory && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.subcategoriesContainer}
+                contentContainerStyle={styles.subcategoriesContent}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.subcategoryButton,
+                    selectedSubcategory === 'all' && styles.subcategoryButtonActive
+                  ]}
+                  onPress={() => setSelectedSubcategory('all')}
+                >
+                  <Text style={[
+                    styles.subcategoryName,
+                    selectedSubcategory === 'all' && styles.subcategoryNameActive
+                  ]}>All {currentCategory.name}</Text>
+                </TouchableOpacity>
+                {currentCategory.subcategories.map((subcategory) => (
+                  <TouchableOpacity
+                    key={subcategory.id}
+                    style={[
+                      styles.subcategoryButton,
+                      selectedSubcategory === subcategory.id && styles.subcategoryButtonActive
+                    ]}
+                    onPress={() => setSelectedSubcategory(subcategory.id)}
+                  >
+                    <Text style={[
+                      styles.subcategoryName,
+                      selectedSubcategory === subcategory.id && styles.subcategoryNameActive
+                    ]}>{subcategory.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
 
         {/* Products Grid */}
         <FlatList
@@ -170,61 +172,62 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  categoriesContainer: {
-    maxHeight: 100,
-    paddingTop: 10,
+  categoriesWrapper: {
+    height: 100, 
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  categoriesContainer: {
+    height: 50,
   },
   categoriesContent: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    height: '100%',
   },
   categoryButton: {
-    alignItems: 'center',
-    marginRight: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#f8f8f8',
+    height: '100%',
+    paddingHorizontal: 16,
+    marginRight: 15,
+    justifyContent: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   categoryButtonActive: {
-    backgroundColor: '#4CAF50',
-  },
-  categoryIcon: {
-    fontSize: 24,
-    marginBottom: 4,
+    borderBottomColor: '#4CAF50',
   },
   categoryName: {
-    fontSize: 12,
-    color: '#333',
+    fontSize: 15,
     fontWeight: '500',
+    color: '#666',
   },
   categoryNameActive: {
-    color: '#fff',
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  subcategoriesWrapper: {
+    height: 50,
   },
   subcategoriesContainer: {
-    maxHeight: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    height: '100%',
   },
   subcategoriesContent: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     paddingVertical: 8,
   },
   subcategoryButton: {
+    height: 34,
     paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f8f8f8',
     marginRight: 10,
+    justifyContent: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 17,
   },
   subcategoryButtonActive: {
     backgroundColor: '#4CAF50',
   },
   subcategoryName: {
     fontSize: 13,
-    color: '#333',
+    color: '#666',
     fontWeight: '500',
   },
   subcategoryNameActive: {
