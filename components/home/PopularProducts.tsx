@@ -92,12 +92,14 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: 120,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    backgroundColor: '#f5f5f5',
+    resizeMode: 'cover',
   },
   productInfo: {
     padding: 12,
-    backgroundColor: '#f8f8f8',  
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   productName: {
     fontSize: 14,
