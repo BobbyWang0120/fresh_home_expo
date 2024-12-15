@@ -1,7 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, SafeAreaView, TextInput, Keyboard } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, usePathname } from 'expo-router';
 import { CarouselBanner } from '@/components/home/CarouselBanner';
 import { CategorySection } from '@/components/home/CategorySection';
 import { PopularProducts } from '@/components/home/PopularProducts';
@@ -16,10 +14,6 @@ import { RefreshableScrollView } from '@/components/common/RefreshableScrollView
 
 export default function HomeScreen() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const scrollViewRef = useRef<RefreshableScrollView>(null);
-  const lastTabPressTime = useRef<number>(0);
-  const pathname = usePathname();
-  const navigation = useNavigation();
 
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
@@ -35,27 +29,6 @@ export default function HomeScreen() {
     await new Promise(resolve => setTimeout(resolve, 1500));
   };
 
-  React.useEffect(() => {
-    const unsubscribe = navigation.addListener('tabPress', (e) => {
-      if (pathname === '/(tabs)/') {
-        e.preventDefault();
-        const currentTime = Date.now();
-        const timeDiff = currentTime - lastTabPressTime.current;
-        
-        if (timeDiff < 300) {
-          // Double tap detected
-          handleRefresh();
-        } else {
-          // Single tap - scroll to top
-          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-        }
-        lastTabPressTime.current = currentTime;
-      }
-    });
-
-    return unsubscribe;
-  }, [pathname, navigation]);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -70,7 +43,6 @@ export default function HomeScreen() {
           <SearchHistory />
         ) : (
           <RefreshableScrollView
-            ref={scrollViewRef}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
             onRefresh={handleRefresh}

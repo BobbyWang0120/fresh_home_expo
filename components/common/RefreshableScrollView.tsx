@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React from 'react';
 import {
   ScrollView,
   RefreshControl,
@@ -19,9 +19,8 @@ export const RefreshableScrollView: React.FC<RefreshableScrollViewProps> = ({
   ...scrollViewProps
 }) => {
   const [refreshing, setRefreshing] = React.useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     if (onRefresh) {
       setRefreshing(true);
       try {
@@ -30,15 +29,10 @@ export const RefreshableScrollView: React.FC<RefreshableScrollViewProps> = ({
         setRefreshing(false);
       }
     }
-  }, [onRefresh]);
-
-  const scrollToTop = () => {
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   return (
     <ScrollView
-      ref={scrollViewRef}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
