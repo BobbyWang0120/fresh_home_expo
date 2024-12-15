@@ -54,7 +54,18 @@ export function OnSaleProducts() {
         contentContainerStyle={styles.scrollContent}
       >
         {onSaleProducts.map((product) => (
-          <TouchableOpacity key={product.id} style={styles.productCard}>
+          <TouchableOpacity 
+            key={product.id} 
+            style={styles.productCard}
+            onPress={() => router.push({
+              pathname: `/product/${product.id}`,
+              params: {
+                ...product,
+                originalPrice: product.originalPrice.toString(),
+                salePrice: product.salePrice.toString(),
+              }
+            })}
+          >
             <View style={styles.discountBadge}>
               <Text style={styles.discountText}>-{product.discount}%</Text>
             </View>
