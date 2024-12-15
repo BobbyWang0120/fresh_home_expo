@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import { orders, Order, OrderStatus } from '../../data/orders';
@@ -45,6 +45,14 @@ const getStatusText = (status: OrderStatus) => {
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // 模拟刷新操作
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setRefreshing(false);
+  };
 
   const filteredOrders = useCallback(() => {
     if (selectedTab === 'all') {
@@ -126,6 +134,14 @@ export default function OrdersScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.ordersList}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#666"
+              colors={['#666']}
+            />
+          }
         />
       </View>
     </>

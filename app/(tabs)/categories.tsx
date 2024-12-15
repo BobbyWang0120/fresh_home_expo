@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList, Image, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList, Image, Dimensions, RefreshControl } from 'react-native';
 import { categories, products, Category, Product } from '../../data/categories';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
@@ -14,6 +14,7 @@ export default function CategoriesScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const filteredProducts = useCallback(() => {
     if (selectedCategory === 'all') {
@@ -39,6 +40,13 @@ export default function CategoriesScreen() {
       setSelectedSubcategory('all');
       setCurrentCategory(null);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // 模拟刷新操作
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setRefreshing(false);
   };
 
   const renderProductItem = ({ item }: { item: Product }) => (
@@ -154,6 +162,14 @@ export default function CategoriesScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.productsContainer}
           columnWrapperStyle={styles.productRow}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#666"
+              colors={['#666']}
+            />
+          }
         />
       </View>
     </>
