@@ -256,12 +256,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: 'hidden',
   },
   productImage: {
     width: '100%',
     height: PRODUCT_WIDTH,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    backgroundColor: '#f5f5f5',
+    resizeMode: 'cover',
   },
   productInfo: {
     padding: 12,
