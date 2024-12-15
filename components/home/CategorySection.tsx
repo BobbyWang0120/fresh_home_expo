@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const categories = [
   // 第一行
@@ -55,9 +57,14 @@ const categories = [
 ];
 
 export function CategorySection() {
+  const router = useRouter();
   // 将分类分成两行
   const firstRow = categories.slice(0, 4);
   const secondRow = categories.slice(4);
+
+  const handleViewAll = () => {
+    router.push('/(tabs)/categories');
+  };
 
   const renderRow = (items: typeof categories) => (
     <View style={styles.categoryRow}>
@@ -78,7 +85,12 @@ export function CategorySection() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Categories</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.sectionTitle}>Categories</Text>
+        <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
+          <Ionicons name="arrow-forward" size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.categoryGrid}>
         {renderRow(firstRow)}
         {renderRow(secondRow)}
@@ -91,11 +103,19 @@ const styles = StyleSheet.create({
   container: {
     padding: 15,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 15,
     color: '#333',
+  },
+  viewAllButton: {
+    padding: 8,
   },
   categoryGrid: {
     gap: 15,

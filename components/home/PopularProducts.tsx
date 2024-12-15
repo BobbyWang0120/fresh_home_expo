@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const popularProducts = [
   {
@@ -26,9 +28,20 @@ const popularProducts = [
 ];
 
 export function PopularProducts() {
+  const router = useRouter();
+
+  const handleViewAll = () => {
+    router.push('/(tabs)/categories');
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Popular Products</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.sectionTitle}>Popular Products</Text>
+        <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
+          <Ionicons name="arrow-forward" size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -62,11 +75,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingBottom: 20,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 15,
     color: '#333',
+  },
+  viewAllButton: {
+    padding: 8,
   },
   scrollContent: {
     paddingRight: 15,
