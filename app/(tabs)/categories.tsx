@@ -63,7 +63,10 @@ export default function CategoriesScreen() {
         </View>
 
         {/* Categories List */}
-        <View style={styles.categoriesWrapper}>
+        <View style={[
+          styles.categoriesWrapper,
+          { height: currentCategory ? 100 : 50 }
+        ]}>
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
@@ -100,8 +103,8 @@ export default function CategoriesScreen() {
           </ScrollView>
 
           {/* Subcategories */}
-          <View style={styles.subcategoriesWrapper}>
-            {currentCategory && (
+          {currentCategory && (
+            <View style={styles.subcategoriesWrapper}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -136,8 +139,8 @@ export default function CategoriesScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            )}
-          </View>
+            </View>
+          )}
         </View>
 
         {/* Products Grid */}
@@ -173,9 +176,9 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   categoriesWrapper: {
-    height: 100, 
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    overflow: 'hidden',
   },
   categoriesContainer: {
     height: 50,
