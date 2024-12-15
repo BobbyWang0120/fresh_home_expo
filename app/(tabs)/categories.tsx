@@ -202,12 +202,11 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 15,
-    fontWeight: '500',
     color: '#666',
+    fontWeight: '500',
   },
   categoryNameActive: {
     color: '#4CAF50',
-    fontWeight: '600',
   },
   subcategoriesWrapper: {
     height: 50,

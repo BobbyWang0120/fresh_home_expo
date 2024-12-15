@@ -174,12 +174,11 @@ const styles = StyleSheet.create({
   },
   tabName: {
     fontSize: 15,
-    fontWeight: '500',
     color: '#666',
+    fontWeight: '500',
   },
   tabNameActive: {
     color: '#4CAF50',
-    fontWeight: '600',
   },
   ordersList: {
     padding: 16,
