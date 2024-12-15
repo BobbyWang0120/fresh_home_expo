@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CarouselBanner } from '@/components/home/CarouselBanner';
 import { CategorySection } from '@/components/home/CategorySection';
 import { PopularProducts } from '@/components/home/PopularProducts';
+import { OnSaleProducts } from '@/components/home/OnSaleProducts';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -43,6 +44,7 @@ export default function HomeScreen() {
             <CarouselBanner />
             <CategorySection />
             <PopularProducts />
+            <OnSaleProducts />
           </ScrollView>
         )}
       </ThemedView>
