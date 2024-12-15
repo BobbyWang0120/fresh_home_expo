@@ -48,7 +48,20 @@ export function PopularProducts() {
         contentContainerStyle={styles.scrollContent}
       >
         {popularProducts.map((product) => (
-          <TouchableOpacity key={product.id} style={styles.productCard}>
+          <TouchableOpacity 
+            key={product.id} 
+            style={styles.productCard}
+            onPress={() => router.push({
+              pathname: `/product/${product.id}`,
+              params: {
+                ...product,
+                price: product.price.toString(),
+                originalPrice: product.price.toString(),
+                salePrice: product.price.toString(),
+                discount: 0
+              }
+            })}
+          >
             <Image
               source={{ uri: product.image }}
               style={styles.productImage}
