@@ -74,42 +74,33 @@ export default function CartScreen() {
       <StatusBar style="dark" />
       <Stack.Screen
         options={{
-          title: "Shopping Cart",
-          headerLeft: () => (
-            <TouchableOpacity 
-              onPress={() => router.back()}
-              style={styles.headerButton}
-            >
-              <Ionicons name="chevron-back" size={24} color="#333" />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity 
-              onPress={() => setIsEditing(!isEditing)}
-              style={styles.headerButton}
-            >
-              <Ionicons 
-                name={isEditing ? "checkmark" : "create-outline"} 
-                size={24} 
-                color="#333" 
-              />
-            </TouchableOpacity>
-          ),
-          headerShadowVisible: true,
-          headerStyle: {
-            backgroundColor: '#fff',
-          },
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#333',
-          },
+          headerShown: false,
         }}
       />
-      
-      <View style={styles.container}>
-        {/* Cart Items List */}
-        <ScrollView style={styles.cartList}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Shopping Cart</Text>
+          <TouchableOpacity 
+            onPress={() => setIsEditing(!isEditing)}
+            style={styles.editButton}
+          >
+            <Ionicons 
+              name={isEditing ? "checkmark" : "create-outline"} 
+              size={24} 
+              color="#333" 
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Cart Items */}
+        <ScrollView style={styles.cartContent}>
           {cartItems.map(item => (
             <View key={item.id} style={styles.cartItem}>
               <TouchableOpacity
@@ -152,7 +143,7 @@ export default function CartScreen() {
           ))}
         </ScrollView>
 
-        {/* Bottom Bar */}
+        {/* Bottom Total Bar */}
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + 10, 20) }]}>
           <TouchableOpacity 
             style={styles.selectAllButton}
@@ -193,11 +184,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  headerButton: {
-    padding: 8,
-    marginRight: 8,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#fff',
   },
-  cartList: {
+  backButton: {
+    marginRight: 16,
+  },
+  editButton: {
+    marginLeft: 'auto',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+  },
+  cartContent: {
     flex: 1,
   },
   cartItem: {
