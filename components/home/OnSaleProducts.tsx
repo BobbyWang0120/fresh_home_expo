@@ -11,7 +11,7 @@ const onSaleProducts = [
     salePrice: 29.99,
     unit: 'lb',
     discount: 25,
-    image: 'https://images.unsplash.com/photo-1582356444852-3c4e1d89fd32?q=80&w=2940&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1648431529663-8ae9606630c0?q=80&w=3072&auto=format&fit=crop',
   },
   {
     id: '2',
@@ -20,7 +20,7 @@ const onSaleProducts = [
     salePrice: 39.99,
     unit: 'lb',
     discount: 30,
-    image: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?q=80&w=2944&auto=format&fit=crop',
+    image: 'https://plus.unsplash.com/premium_photo-1719611418025-07c08bf00a49?q=80&w=3087&auto=format&fit=crop',
   },
   {
     id: '3',
@@ -29,7 +29,7 @@ const onSaleProducts = [
     salePrice: 18.99,
     unit: 'dozen',
     discount: 20,
-    image: 'https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?q=80&w=2787&auto=format&fit=crop',
+    image: 'https://plus.unsplash.com/premium_photo-1670742337957-fcd72066e4de?q=80&w=3087&auto=format&fit=crop',
   },
 ];
 
