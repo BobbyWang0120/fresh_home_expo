@@ -49,8 +49,8 @@ export default function HomeScreen() {
           >
             <CarouselBanner />
             <CategorySection />
-            <PopularProducts />
             <OnSaleProducts />
+            <PopularProducts />
           </RefreshableScrollView>
         )}
       </ThemedView>
