@@ -5,7 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 
 const { width } = Dimensions.get('window');
-const PRODUCT_WIDTH = (width - 40) / 2;
+const CONTAINER_PADDING = 16;
+const CARD_GAP = 12;
+const PRODUCT_WIDTH = (width - (CONTAINER_PADDING * 2) - CARD_GAP) / 2;
 
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
@@ -237,15 +239,15 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   productsContainer: {
-    padding: 10,
+    paddingHorizontal: CONTAINER_PADDING,
+    paddingVertical: CONTAINER_PADDING,
   },
   productRow: {
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    marginBottom: CARD_GAP,
   },
   productCard: {
     width: PRODUCT_WIDTH,
-    marginBottom: 20,
     backgroundColor: '#fff',
     borderRadius: 12,
     shadowColor: '#000',
@@ -257,6 +259,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   productImage: {
     width: '100%',
@@ -266,6 +270,9 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     padding: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   productName: {
     fontSize: 14,
