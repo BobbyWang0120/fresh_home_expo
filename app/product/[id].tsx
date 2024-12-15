@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
@@ -36,95 +36,102 @@ export default function ProductDetail() {
   } = params;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.shareButton}>
-          <Ionicons name="share-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Product Image */}
-        <Image
-          source={{ uri: image as string }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
-
-        {/* Product Info */}
-        <View style={styles.productInfo}>
-          <Text style={styles.productName}>{name}</Text>
-          
-          <View style={styles.priceContainer}>
-            <View style={styles.priceRow}>
-              <Text style={styles.salePrice}>${Number(salePrice).toFixed(2)}</Text>
-              <Text style={styles.originalPrice}>${Number(originalPrice).toFixed(2)}</Text>
-              <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>-{discount}%</Text>
-              </View>
-            </View>
-            <Text style={styles.unitText}>/{unit}</Text>
-          </View>
-
-          {/* Description */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.descriptionText}>{productDescription.description}</Text>
-          </View>
-
-          {/* Specifications */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Specifications</Text>
-            {productDescription.specifications.map((spec, index) => (
-              <View key={index} style={styles.specificationRow}>
-                <Text style={styles.specLabel}>{spec.label}</Text>
-                <Text style={styles.specValue}>{spec.value}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Nutrition Facts */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nutrition Facts</Text>
-            <View style={styles.nutritionContainer}>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.calories}</Text>
-                <Text style={styles.nutritionLabel}>Calories</Text>
-              </View>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.protein}</Text>
-                <Text style={styles.nutritionLabel}>Protein</Text>
-              </View>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.fat}</Text>
-                <Text style={styles.nutritionLabel}>Fat</Text>
-              </View>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.omega3}</Text>
-                <Text style={styles.nutritionLabel}>Omega-3</Text>
-              </View>
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: false,
+        }}
+      />
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: image as string }}
+              style={styles.productImage}
+              resizeMode="cover"
+            />
+            {/* Header Buttons */}
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => router.back()}
+              >
+                <Ionicons name="chevron-back" size={24} color="#333" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerButton}>
+                <Ionicons name="share-outline" size={22} color="#333" />
+              </TouchableOpacity>
             </View>
           </View>
+
+          {/* Product Info */}
+          <View style={styles.productInfo}>
+            <Text style={styles.productName}>{name}</Text>
+            
+            <View style={styles.priceContainer}>
+              <View style={styles.priceRow}>
+                <Text style={styles.salePrice}>${Number(salePrice).toFixed(2)}</Text>
+                <Text style={styles.originalPrice}>${Number(originalPrice).toFixed(2)}</Text>
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountText}>-{discount}%</Text>
+                </View>
+              </View>
+              <Text style={styles.unitText}>/{unit}</Text>
+            </View>
+
+            {/* Description */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Description</Text>
+              <Text style={styles.descriptionText}>{productDescription.description}</Text>
+            </View>
+
+            {/* Specifications */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Specifications</Text>
+              {productDescription.specifications.map((spec, index) => (
+                <View key={index} style={styles.specificationRow}>
+                  <Text style={styles.specLabel}>{spec.label}</Text>
+                  <Text style={styles.specValue}>{spec.value}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Nutrition Facts */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Nutrition Facts</Text>
+              <View style={styles.nutritionContainer}>
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.calories}</Text>
+                  <Text style={styles.nutritionLabel}>Calories</Text>
+                </View>
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.protein}</Text>
+                  <Text style={styles.nutritionLabel}>Protein</Text>
+                </View>
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.fat}</Text>
+                  <Text style={styles.nutritionLabel}>Fat</Text>
+                </View>
+                <View style={styles.nutritionItem}>
+                  <Text style={styles.nutritionValue}>{productDescription.nutritionFacts.omega3}</Text>
+                  <Text style={styles.nutritionLabel}>Omega-3</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Add to Cart Button */}
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.addToCartButton}>
+            <Ionicons name="cart-outline" size={24} color="#fff" style={styles.cartIcon} />
+            <Text style={styles.addToCartText}>Add to Cart</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      {/* Add to Cart Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.addToCartButton}>
-          <Ionicons name="cart-outline" size={24} color="#fff" style={styles.cartIcon} />
-          <Text style={styles.addToCartText}>Add to Cart</Text>
-        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -133,43 +140,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
+  imageContainer: {
+    position: 'relative',
+    backgroundColor: '#000',
+  },
+  productImage: {
+    width: '100%',
+    height: Platform.OS === 'ios' ? 450 : 420,
+    opacity: 0.97,
+  },
+  headerButtons: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 48 : 32,
+    top: Platform.OS === 'ios' ? 60 : 45,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    zIndex: 10,
+    zIndex: 1000,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  shareButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
   },
   content: {
     flex: 1,
   },
-  productImage: {
-    width: '100%',
-    height: 400,
-  },
   productInfo: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop: -20,
+    marginTop: -24,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
