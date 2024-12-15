@@ -33,7 +33,6 @@ const cartItems = [
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isEditing, setIsEditing] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>(cartItems.map(item => item.id));
   const [quantities, setQuantities] = useState<Record<string, number>>(
     Object.fromEntries(cartItems.map(item => [item.id, item.quantity]))
@@ -87,16 +86,6 @@ export default function CartScreen() {
             <Ionicons name="chevron-back" size={24} color="#333" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Shopping Cart</Text>
-          <TouchableOpacity 
-            onPress={() => setIsEditing(!isEditing)}
-            style={styles.editButton}
-          >
-            <Ionicons 
-              name={isEditing ? "checkmark" : "create-outline"} 
-              size={24} 
-              color="#333" 
-            />
-          </TouchableOpacity>
         </View>
 
         {/* Cart Items */}
@@ -195,9 +184,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 16,
-  },
-  editButton: {
-    marginLeft: 'auto',
   },
   headerTitle: {
     fontSize: 24,
