@@ -1,27 +1,36 @@
-import { useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/(tabs)');
-    }, 2000);
+      // 开始淡出动画
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start(() => {
+        // 动画完成后导航
+        router.replace('/(tabs)');
+      });
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.logoContainer}>
           <Text style={styles.title}>Fresh Home</Text>
-          <Text style={styles.subtitle}>California Fresh Delivery</Text>
+          <Text style={styles.subtitle}>Ocean to Table</Text>
         </View>
         <View style={styles.decorativeLine} />
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -42,22 +51,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#4CAF50', // 更明亮的绿色
+    fontSize: 42,
+    fontWeight: '700',
+    color: '#4CAF50',
     marginBottom: 12,
-    letterSpacing: 1,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 20,
-    color: '#66BB6A', // 更浅的绿色
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#66BB6A',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   decorativeLine: {
-    width: 80,
-    height: 3,
-    backgroundColor: '#81C784', // 最浅的绿色
-    borderRadius: 1.5,
+    width: 40,
+    height: 2,
+    backgroundColor: '#81C784',
+    borderRadius: 1,
     marginTop: 24,
   },
 });
