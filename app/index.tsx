@@ -26,8 +26,8 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.logoContainer}>
-          <Text style={styles.title}>Fresh Home</Text>
-          <Text style={styles.subtitle}>Ocean to Table</Text>
+          <Text style={styles.title}>鲜家</Text>
+          <Text style={styles.subtitle}>从海洋到餐桌</Text>
         </View>
         <View style={styles.decorativeLine} />
       </Animated.View>

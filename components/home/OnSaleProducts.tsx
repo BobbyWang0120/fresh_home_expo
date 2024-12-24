@@ -43,7 +43,7 @@ export function OnSaleProducts() {
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
-        <Text style={styles.sectionTitle}>Special Offers</Text>
+        <Text style={styles.sectionTitle}>特价商品</Text>
         <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
           <Ionicons name="arrow-forward" size={20} color="#666" />
         </TouchableOpacity>

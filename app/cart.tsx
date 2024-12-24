@@ -9,24 +9,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const cartItems = [
   {
     id: '1',
-    name: 'Fresh Salmon',
+    name: '新鲜三文鱼',
     price: 25.99,
     quantity: 2,
-    unit: 'lb',
+    unit: '磅',
   },
   {
     id: '2',
-    name: 'King Crab',
+    name: '帝王蟹',
     price: 45.99,
     quantity: 1,
-    unit: 'lb',
+    unit: '磅',
   },
   {
     id: '3',
-    name: 'Fresh Shrimp',
+    name: '新鲜虾仁',
     price: 18.99,
     quantity: 3,
-    unit: 'lb',
+    unit: '磅',
   },
 ];
 
@@ -85,7 +85,7 @@ export default function CartScreen() {
           >
             <Ionicons name="chevron-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Shopping Cart</Text>
+          <Text style={styles.headerTitle}>购物车</Text>
         </View>
 
         {/* Cart Items */}
@@ -143,11 +143,11 @@ export default function CartScreen() {
               size={24}
               color="#4CAF50"
             />
-            <Text style={styles.selectAllText}>Select All</Text>
+            <Text style={styles.selectAllText}>全选</Text>
           </TouchableOpacity>
 
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total: </Text>
+            <Text style={styles.totalLabel}>总计: </Text>
             <Text style={styles.totalPrice}>${getTotalPrice().toFixed(2)}</Text>
           </View>
 
@@ -159,7 +159,7 @@ export default function CartScreen() {
             disabled={selectedItems.length === 0}
           >
             <Text style={styles.checkoutButtonText}>
-              Checkout ({selectedItems.length})
+              结算 ({selectedItems.length})
             </Text>
           </TouchableOpacity>
         </View>

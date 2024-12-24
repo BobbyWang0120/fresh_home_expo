@@ -69,7 +69,7 @@ export default function CategoriesScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Categories</Text>
+          <Text style={styles.headerTitle}>分类</Text>
         </View>
 
         {/* Categories List */}
@@ -93,7 +93,7 @@ export default function CategoriesScreen() {
               <Text style={[
                 styles.categoryName,
                 selectedCategory === 'all' && styles.categoryNameActive
-              ]}>All</Text>
+              ]}>全部</Text>
             </TouchableOpacity>
             {categories.map((category) => (
               <TouchableOpacity
@@ -131,7 +131,7 @@ export default function CategoriesScreen() {
                   <Text style={[
                     styles.subcategoryName,
                     selectedSubcategory === 'all' && styles.subcategoryNameActive
-                  ]}>All {currentCategory.name}</Text>
+                  ]}>全部{currentCategory.name}</Text>
                 </TouchableOpacity>
                 {currentCategory.subcategories.map((subcategory) => (
                   <TouchableOpacity

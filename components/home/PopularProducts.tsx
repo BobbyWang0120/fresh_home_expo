@@ -37,7 +37,7 @@ export function PopularProducts() {
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
-        <Text style={styles.sectionTitle}>Popular Products</Text>
+        <Text style={styles.sectionTitle}>热门商品</Text>
         <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
           <Ionicons name="arrow-forward" size={20} color="#666" />
         </TouchableOpacity>

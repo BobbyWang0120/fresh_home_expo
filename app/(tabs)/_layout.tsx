@@ -48,7 +48,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: '首页',
           tabBarIcon: ({ focused, size }) => (
             <Ionicons 
               name={focused ? "home" : "home-outline"} 
@@ -61,7 +61,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          title: 'Categories',
+          title: '分类',
           tabBarIcon: ({ focused, size }) => (
             <Ionicons 
               name={focused ? "grid" : "grid-outline"} 
@@ -74,7 +74,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Orders',
+          title: '订单',
           tabBarIcon: ({ focused, size }) => (
             <Ionicons 
               name={focused ? "receipt" : "receipt-outline"} 
@@ -87,7 +87,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: '我的',
           tabBarIcon: ({ focused, size }) => (
             <Ionicons 
               name={focused ? "person" : "person-outline"} 

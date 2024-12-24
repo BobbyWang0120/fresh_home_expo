@@ -5,11 +5,11 @@ import { Stack } from 'expo-router';
 import { orders, Order, OrderStatus } from '../../data/orders';
 
 const ORDER_TABS = [
-  { id: 'all', name: 'All' },
-  { id: 'pending_payment', name: 'Pending Payment' },
-  { id: 'pending_delivery', name: 'Pending Delivery' },
-  { id: 'delivering', name: 'Delivering' },
-  { id: 'completed', name: 'Completed' },
+  { id: 'all', name: '全部' },
+  { id: 'pending_payment', name: '待付款' },
+  { id: 'pending_delivery', name: '待发货' },
+  { id: 'delivering', name: '配送中' },
+  { id: 'completed', name: '已完成' },
 ];
 
 const getStatusColor = (status: OrderStatus) => {
@@ -30,13 +30,13 @@ const getStatusColor = (status: OrderStatus) => {
 const getStatusText = (status: OrderStatus) => {
   switch (status) {
     case 'pending_payment':
-      return 'Pending Payment';
+      return '待付款';
     case 'pending_delivery':
-      return 'Pending Delivery';
+      return '待发货';
     case 'delivering':
-      return 'Delivering';
+      return '配送中';
     case 'completed':
-      return 'Completed';
+      return '已完成';
     default:
       return status;
   }
@@ -64,24 +64,24 @@ export default function OrdersScreen() {
   const renderOrderItem = ({ item }: { item: Order }) => (
     <View style={styles.orderCard}>
       <View style={styles.orderHeader}>
-        <Text style={styles.orderNumber}>Order #{item.orderNumber}</Text>
+        <Text style={styles.orderNumber}>订单 #{item.orderNumber}</Text>
         <Text style={[styles.orderStatus, { color: getStatusColor(item.status) }]}>
           {getStatusText(item.status)}
         </Text>
       </View>
       <View style={styles.orderBody}>
-        <Text style={styles.orderAmount}>Total: ${item.totalAmount.toFixed(2)}</Text>
+        <Text style={styles.orderAmount}>总计: ${item.totalAmount.toFixed(2)}</Text>
         <Text style={styles.orderDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
       </View>
       <View style={styles.orderActions}>
         {item.status === 'pending_payment' && (
           <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Pay Now</Text>
+            <Text style={styles.actionButtonText}>立即付款</Text>
           </TouchableOpacity>
         )}
         {item.status === 'delivering' && (
           <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>Track Order</Text>
+            <Text style={styles.actionButtonText}>追踪订单</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -98,7 +98,7 @@ export default function OrdersScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Orders</Text>
+          <Text style={styles.headerTitle}>订单</Text>
         </View>
 
         {/* Order Status Tabs */}

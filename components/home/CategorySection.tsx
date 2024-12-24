@@ -7,50 +7,50 @@ const categories = [
   // 第一行
   {
     id: '1',
-    name: 'Fish',
+    name: '鱼类',
     icon: '🐟',
     color: '#4A90E2',
   },
   {
     id: '2',
-    name: 'Shellfish',
+    name: '虾类',
     icon: '🦐',
     color: '#E17055',
   },
   {
     id: '3',
-    name: 'Mollusks',
+    name: '贝类',
     icon: '🦪',
     color: '#00B894',
   },
   {
     id: '4',
-    name: 'Delicacies',
+    name: '海味',
     icon: '🦑',
     color: '#FDCB6E',
   },
   // 第二行
   {
     id: '5',
-    name: 'Lobster',
+    name: '龙虾',
     icon: '🦞',
     color: '#FF6B6B',
   },
   {
     id: '6',
-    name: 'Octopus',
+    name: '章鱼',
     icon: '🐙',
     color: '#A8E6CF',
   },
   {
     id: '7',
-    name: 'Crab',
+    name: '螃蟹',
     icon: '🦀',
     color: '#FFB6B9',
   },
   {
     id: '8',
-    name: 'Caviar',
+    name: '鱼子酱',
     icon: '🫧',
     color: '#957DAD',
   },
@@ -86,7 +86,7 @@ export function CategorySection() {
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
-        <Text style={styles.sectionTitle}>Categories</Text>
+        <Text style={styles.sectionTitle}>分类</Text>
         <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
           <Ionicons name="arrow-forward" size={20} color="#666" />
         </TouchableOpacity>
