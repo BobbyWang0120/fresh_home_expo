@@ -1,6 +1,20 @@
+/**
+ * CategorySection.tsx
+ * 
+ * 功能描述：
+ * - 展示商品分类的网格布局组件
+ * - 包含中英文分类名称和图标
+ * - 点击分类可跳转到对应分类页面
+ * 
+ * 依赖：
+ * - expo-router：用于页面导航
+ * - categories数据：来自../../data/categories
+ */
+
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { categories } from '../../data/categories';
 
 export function CategorySection() {
@@ -13,8 +27,18 @@ export function CategorySection() {
     });
   };
 
+  const handleViewAll = () => {
+    router.push('/(tabs)/categories');
+  };
+
   return (
     <View style={styles.container}>
+      <View style={styles.titleContainer}>
+        <Text style={styles.sectionTitle}>商品分类</Text>
+        <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
+          <Ionicons name="arrow-forward" size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.grid}>
         {categories.map((category) => (
           <TouchableOpacity
@@ -36,8 +60,21 @@ export function CategorySection() {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 10,
+    paddingTop: 15,
     paddingHorizontal: 15,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  viewAllButton: {
+    padding: 5,
   },
   grid: {
     flexDirection: 'row',
@@ -48,33 +85,30 @@ const styles = StyleSheet.create({
     width: '48%',
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 10,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 3,
+    elevation: 3,
   },
   categoryIcon: {
-    fontSize: 24,
-    marginRight: 10,
+    fontSize: 20,
+    marginBottom: 4,
   },
   categoryTextContainer: {
-    flex: 1,
+    gap: 2,
   },
   categoryName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
-    marginBottom: 2,
   },
   categoryNameEn: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
   },
 });
