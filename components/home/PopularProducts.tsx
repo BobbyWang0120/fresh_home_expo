@@ -2,30 +2,9 @@ import React from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { products } from '../../data/categories';
 
-const popularProducts = [
-  {
-    id: '1',
-    name: 'Fresh Salmon',
-    price: 25.99,
-    unit: 'lb',
-    image: 'https://plus.unsplash.com/premium_photo-1723478431094-4854c4555fc2?q=80&w=3227&auto=format&fit=crop',
-  },
-  {
-    id: '2',
-    name: 'King Crab',
-    price: 45.99,
-    unit: 'lb',
-    image: 'https://plus.unsplash.com/premium_photo-1722775045882-98916a9cfb0b?q=80&w=3270&auto=format&fit=crop',
-  },
-  {
-    id: '3',
-    name: 'Fresh Shrimp',
-    price: 18.99,
-    unit: 'lb',
-    image: 'https://plus.unsplash.com/premium_photo-1709146097755-f5f9ba107de8?q=80&w=3269&auto=format&fit=crop',
-  },
-];
+const popularProducts = products.slice(3, 6);
 
 export function PopularProducts() {
   const router = useRouter();
@@ -68,11 +47,13 @@ export function PopularProducts() {
               resizeMode="cover"
             />
             <View style={styles.productInfo}>
-              <Text style={styles.productName}>{product.name}</Text>
+              <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+              <Text style={styles.productNameEn} numberOfLines={1}>{product.nameEn}</Text>
               <View style={styles.priceContainer}>
-                <Text style={styles.currencySymbol}>$</Text>
-                <Text style={styles.productPrice}>{product.price}</Text>
-                <Text style={styles.unitText}>/{product.unit}</Text>
+                <Text style={styles.price}>${product.price.toFixed(2)}/{product.unit}</Text>
+                {product.originalPrice > product.price && (
+                  <Text style={styles.originalPrice}>${product.originalPrice.toFixed(2)}/{product.unit}</Text>
+                )}
               </View>
             </View>
           </TouchableOpacity>
@@ -139,26 +120,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  productNameEn: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  currencySymbol: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
-    marginRight: 1,
-  },
-  productPrice: {
-    fontSize: 16,
+  price: {
+    fontSize: 14,
     color: '#4CAF50',
     fontWeight: '600',
   },
-  unitText: {
+  originalPrice: {
     fontSize: 12,
-    color: '#666',
-    marginLeft: 1,
+    color: '#999',
+    textDecorationLine: 'line-through',
   },
 });
