@@ -1,208 +1,171 @@
 export interface Product {
   id: string;
   name: string;
+  nameEn: string;
   price: number;
+  originalPrice: number;
   unit: string;
+  origin: string;
   image: string;
   category: string;
-  subcategory: string;
 }
 
 export interface Category {
   id: string;
   name: string;
+  nameEn: string;
   icon: string;
-  subcategories: Subcategory[];
-}
-
-export interface Subcategory {
-  id: string;
-  name: string;
 }
 
 export const categories: Category[] = [
   {
-    id: 'fish',
-    name: 'Fish',
-    icon: '🐟',
-    subcategories: [
-      { id: 'salmon', name: 'Salmon' },
-      { id: 'tuna', name: 'Tuna' },
-      { id: 'cod', name: 'Cod' },
-      { id: 'seabass', name: 'Sea Bass' },
-    ],
-  },
-  {
-    id: 'shellfish',
-    name: 'Shellfish',
+    id: 'shrimp',
+    name: '虾',
+    nameEn: 'Shrimp',
     icon: '🦐',
-    subcategories: [
-      { id: 'shrimp', name: 'Shrimp' },
-      { id: 'scallop', name: 'Scallop' },
-      { id: 'mussel', name: 'Mussel' },
-      { id: 'clam', name: 'Clam' },
-    ],
-  },
-  {
-    id: 'mollusks',
-    name: 'Mollusks',
-    icon: '🦑',
-    subcategories: [
-      { id: 'squid', name: 'Squid' },
-      { id: 'octopus', name: 'Octopus' },
-      { id: 'cuttlefish', name: 'Cuttlefish' },
-    ],
-  },
-  {
-    id: 'delicacies',
-    name: 'Delicacies',
-    icon: '🍱',
-    subcategories: [
-      { id: 'caviar', name: 'Caviar' },
-      { id: 'roe', name: 'Fish Roe' },
-      { id: 'uni', name: 'Sea Urchin' },
-    ],
   },
   {
     id: 'lobster',
-    name: 'Lobster',
+    name: '龙虾',
+    nameEn: 'Lobster',
     icon: '🦞',
-    subcategories: [
-      { id: 'american', name: 'American Lobster' },
-      { id: 'spiny', name: 'Spiny Lobster' },
-      { id: 'rock', name: 'Rock Lobster' },
-    ],
-  },
-  {
-    id: 'octopus',
-    name: 'Octopus',
-    icon: '🐙',
-    subcategories: [
-      { id: 'common', name: 'Common Octopus' },
-      { id: 'giant', name: 'Giant Pacific' },
-      { id: 'baby', name: 'Baby Octopus' },
-    ],
   },
   {
     id: 'crab',
-    name: 'Crab',
+    name: '蟹',
+    nameEn: 'Crab',
     icon: '🦀',
-    subcategories: [
-      { id: 'king', name: 'King Crab' },
-      { id: 'snow', name: 'Snow Crab' },
-      { id: 'dungeness', name: 'Dungeness Crab' },
-      { id: 'blue', name: 'Blue Crab' },
-    ],
   },
   {
-    id: 'caviar',
-    name: 'Caviar',
-    icon: '🫙',
-    subcategories: [
-      { id: 'beluga', name: 'Beluga Caviar' },
-      { id: 'osetra', name: 'Osetra Caviar' },
-      { id: 'sevruga', name: 'Sevruga Caviar' },
-    ],
+    id: 'mantis_shrimp',
+    name: '皮皮虾',
+    nameEn: 'Mantis Shrimp',
+    icon: '🦐',
+  },
+  {
+    id: 'shellfish',
+    name: '贝类',
+    nameEn: 'Shellfish',
+    icon: '🦪',
+  },
+  {
+    id: 'fish',
+    name: '鱼类',
+    nameEn: 'Fish',
+    icon: '🐟',
   },
 ];
 
+// 从CSV数据生成商品列表
 export const products: Product[] = [
-  // Fish
   {
     id: '1',
-    name: 'Fresh Atlantic Salmon',
-    price: 25.99,
+    name: '基围虾',
+    nameEn: 'Greasyback Shrimp',
+    price: 26.99,
+    originalPrice: 20.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'fish',
-    subcategory: 'salmon',
+    origin: 'Florida',
+    image: 'https://example.com/shrimp1.jpg',
+    category: 'shrimp',
   },
   {
     id: '2',
-    name: 'Wild Caught Tuna',
-    price: 32.99,
+    name: '竹节虾',
+    nameEn: 'Ridgeback Shrimp',
+    price: 7.99,
+    originalPrice: 7.5,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'fish',
-    subcategory: 'tuna',
+    origin: 'California',
+    image: 'https://example.com/shrimp2.jpg',
+    category: 'shrimp',
   },
   {
     id: '3',
-    name: 'Pacific Cod Fillet',
-    price: 18.99,
+    name: '珊瑚虾',
+    nameEn: 'Spot Prawn Shrimp',
+    price: 48.0,
+    originalPrice: 35.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'fish',
-    subcategory: 'cod',
+    origin: 'California',
+    image: 'https://example.com/shrimp3.jpg',
+    category: 'shrimp',
   },
-  // Shellfish
   {
     id: '4',
-    name: 'Jumbo Shrimp',
-    price: 24.99,
+    name: '波士顿龙虾(3~4磅)',
+    nameEn: 'Boston Lobster',
+    price: 16.99,
+    originalPrice: 14.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'shellfish',
-    subcategory: 'shrimp',
+    origin: 'Boston',
+    image: 'https://example.com/lobster1.jpg',
+    category: 'lobster',
   },
   {
     id: '5',
-    name: 'Sea Scallops',
-    price: 35.99,
+    name: '澳洲龙虾',
+    nameEn: 'Australian Lobster',
+    price: 56.99,
+    originalPrice: 42.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'shellfish',
-    subcategory: 'scallop',
+    origin: 'Australian',
+    image: 'https://example.com/lobster2.jpg',
+    category: 'lobster',
   },
-  // Mollusks
   {
     id: '6',
-    name: 'Fresh Squid',
-    price: 15.99,
+    name: '帝王蟹',
+    nameEn: 'King Crab',
+    price: 46.99,
+    originalPrice: 38.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'mollusks',
-    subcategory: 'squid',
+    origin: 'Norway',
+    image: 'https://example.com/crab1.jpg',
+    category: 'crab',
   },
-  // Delicacies
   {
     id: '7',
-    name: 'Premium Caviar',
-    price: 199.99,
-    unit: 'oz',
-    image: 'https://placehold.co/400x400',
-    category: 'delicacies',
-    subcategory: 'caviar',
+    name: '肉蟹',
+    nameEn: 'Dungeness Crab',
+    price: 16.99,
+    originalPrice: 13.5,
+    unit: 'lb',
+    origin: 'Vancouver',
+    image: 'https://example.com/crab2.jpg',
+    category: 'crab',
   },
-  // Lobster
   {
     id: '8',
-    name: 'Live Maine Lobster',
-    price: 45.99,
+    name: '皮皮虾',
+    nameEn: 'Mantis Shrimp',
+    price: 68.0,
+    originalPrice: 45.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'lobster',
-    subcategory: 'american',
+    origin: 'Thailand',
+    image: 'https://example.com/mantis1.jpg',
+    category: 'mantis_shrimp',
   },
-  // Octopus
   {
     id: '9',
-    name: 'Fresh Octopus',
-    price: 28.99,
-    unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'octopus',
-    subcategory: 'common',
+    name: '带壳生蚝(大)',
+    nameEn: 'Oyster XL',
+    price: 28.0,
+    originalPrice: 23.0,
+    unit: 'XL',
+    origin: 'Oregon',
+    image: 'https://example.com/oyster1.jpg',
+    category: 'shellfish',
   },
-  // Crab
   {
     id: '10',
-    name: 'Alaskan King Crab',
-    price: 89.99,
+    name: '东星斑',
+    nameEn: 'Coral Grouper',
+    price: 56.99,
+    originalPrice: 44.0,
     unit: 'lb',
-    image: 'https://placehold.co/400x400',
-    category: 'crab',
-    subcategory: 'king',
+    origin: 'Australian',
+    image: 'https://example.com/fish1.jpg',
+    category: 'fish',
   },
-  // More products...
 ];

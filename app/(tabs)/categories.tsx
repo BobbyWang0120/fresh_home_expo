@@ -12,33 +12,20 @@ const PRODUCT_WIDTH = (width - (CONTAINER_PADDING * 2) - CARD_GAP) / 2;
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
-  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const filteredProducts = useCallback(() => {
     if (selectedCategory === 'all') {
       return products;
     }
-    if (selectedSubcategory === 'all') {
-      return products.filter(product => product.category === selectedCategory);
-    }
-    return products.filter(
-      product => 
-        product.category === selectedCategory && 
-        product.subcategory === selectedSubcategory
-    );
-  }, [selectedCategory, selectedSubcategory]);
+    return products.filter(product => product.category === selectedCategory);
+  }, [selectedCategory]);
 
   const handleCategoryPress = (category: Category | null) => {
     if (category) {
       setSelectedCategory(category.id);
-      setSelectedSubcategory('all');
-      setCurrentCategory(category);
     } else {
       setSelectedCategory('all');
-      setSelectedSubcategory('all');
-      setCurrentCategory(null);
     }
   };
 
@@ -49,12 +36,27 @@ export default function CategoriesScreen() {
     setRefreshing(false);
   };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const renderCategoryItem = ({ item }: { item: typeof categories[0] }) => (
+    <TouchableOpacity style={styles.categoryItem} onPress={() => handleCategoryPress(item)}>
+      <Text style={styles.categoryIcon}>{item.icon}</Text>
+      <View style={styles.categoryTextContainer}>
+        <Text style={styles.categoryName}>{item.name}</Text>
+        <Text style={styles.categoryNameEn}>{item.nameEn}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderProductItem = ({ item }: { item: typeof products[0] }) => (
     <TouchableOpacity style={styles.productCard}>
       <Image source={{ uri: item.image }} style={styles.productImage} />
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+        <Text style={styles.productNameEn} numberOfLines={1}>{item.nameEn}</Text>
         <Text style={styles.productPrice}>${item.price.toFixed(2)}/{item.unit}</Text>
+        {item.originalPrice > item.price && (
+          <Text style={styles.originalPrice}>${item.originalPrice.toFixed(2)}/{item.unit}</Text>
+        )}
+        <Text style={styles.origin}>{item.origin}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -73,10 +75,7 @@ export default function CategoriesScreen() {
         </View>
 
         {/* Categories List */}
-        <View style={[
-          styles.categoriesWrapper,
-          { height: currentCategory ? 100 : 50 }
-        ]}>
+        <View style={styles.categoriesWrapper}>
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
@@ -111,46 +110,6 @@ export default function CategoriesScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-
-          {/* Subcategories */}
-          {currentCategory && (
-            <View style={styles.subcategoriesWrapper}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.subcategoriesContainer}
-                contentContainerStyle={styles.subcategoriesContent}
-              >
-                <TouchableOpacity
-                  style={[
-                    styles.subcategoryButton,
-                    selectedSubcategory === 'all' && styles.subcategoryButtonActive
-                  ]}
-                  onPress={() => setSelectedSubcategory('all')}
-                >
-                  <Text style={[
-                    styles.subcategoryName,
-                    selectedSubcategory === 'all' && styles.subcategoryNameActive
-                  ]}>全部{currentCategory.name}</Text>
-                </TouchableOpacity>
-                {currentCategory.subcategories.map((subcategory) => (
-                  <TouchableOpacity
-                    key={subcategory.id}
-                    style={[
-                      styles.subcategoryButton,
-                      selectedSubcategory === subcategory.id && styles.subcategoryButtonActive
-                    ]}
-                    onPress={() => setSelectedSubcategory(subcategory.id)}
-                  >
-                    <Text style={[
-                      styles.subcategoryName,
-                      selectedSubcategory === subcategory.id && styles.subcategoryNameActive
-                    ]}>{subcategory.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
         </View>
 
         {/* Products Grid */}
@@ -224,35 +183,6 @@ const styles = StyleSheet.create({
   categoryNameActive: {
     color: '#4CAF50',
   },
-  subcategoriesWrapper: {
-    height: 50,
-  },
-  subcategoriesContainer: {
-    height: '100%',
-  },
-  subcategoriesContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  subcategoryButton: {
-    height: 34,
-    paddingHorizontal: 16,
-    marginRight: 10,
-    justifyContent: 'center',
-    backgroundColor: '#f8f8f8',
-    borderRadius: 17,
-  },
-  subcategoryButtonActive: {
-    backgroundColor: '#4CAF50',
-  },
-  subcategoryName: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '500',
-  },
-  subcategoryNameActive: {
-    color: '#fff',
-  },
   productsContainer: {
     paddingHorizontal: CONTAINER_PADDING,
     paddingVertical: CONTAINER_PADDING,
@@ -295,9 +225,47 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 4,
   },
+  productNameEn: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
   productPrice: {
     fontSize: 14,
     color: '#4CAF50',
     fontWeight: '600',
+  },
+  originalPrice: {
+    fontSize: 12,
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+  origin: {
+    fontSize: 12,
+    color: '#666',
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  categoryIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  categoryTextContainer: {
+    flexDirection: 'column',
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  categoryNameEn: {
+    fontSize: 12,
+    color: '#666',
   },
 });
