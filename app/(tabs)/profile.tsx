@@ -23,27 +23,59 @@ import { supabase } from '../../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { Colors } from '../../constants/Colors';
 
+// Define the Profile type
+type Profile = {
+  id: string;
+  role: 'user' | 'supplier';
+  created_at: string;
+  updated_at: string;
+};
+
 export default function ProfileScreen() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     // Check for existing session on component mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) {
+        fetchProfile(session.user.id);
+      }
       setLoading(false);
     });
 
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   const handleAuth = async () => {
     try {
@@ -159,6 +191,13 @@ export default function ProfileScreen() {
             <Text style={styles.value}>{session.user.email}</Text>
           </View>
           
+          <View style={styles.infoItem}>
+            <Text style={styles.label}>角色</Text>
+            <Text style={styles.value}>
+              {profile?.role === 'supplier' ? '供应商' : '用户'}
+            </Text>
+          </View>
+
           <View style={styles.infoItem}>
             <Text style={styles.label}>用户 ID</Text>
             <Text style={styles.value}>{session.user.id}</Text>
