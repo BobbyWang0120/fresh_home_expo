@@ -17,9 +17,11 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import { Colors } from '../../constants/Colors';
 
 export default function ProfileScreen() {
   const [session, setSession] = useState<Session | null>(null);
@@ -82,100 +84,158 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.light.tint} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!session) {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>{isLogin ? 'Login' : 'Sign Up'}</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={handleAuth}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {isLogin ? 'Login' : 'Sign Up'}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => setIsLogin(!isLogin)}
-          style={styles.switchButton}
-        >
-          <Text style={styles.switchText}>
-            {isLogin ? 'Need an account? Sign Up' : 'Have an account? Login'}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>{isLogin ? '登录账号' : '创建账号'}</Text>
+            <View style={styles.decorativeLine} />
+          </View>
+          
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="邮箱地址"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholderTextColor={Colors.light.icon}
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="密码"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholderTextColor={Colors.light.icon}
+            />
+            
+            <TouchableOpacity 
+              style={styles.button}
+              onPress={handleAuth}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {isLogin ? '登录' : '注册'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={() => setIsLogin(!isLogin)}
+              style={styles.switchButton}
+            >
+              <Text style={styles.switchText}>
+                {isLogin ? '没有账号？立即注册' : '已有账号？立即登录'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <Text style={styles.email}>Email: {session.user.email}</Text>
-      <Text style={styles.info}>User ID: {session.user.id}</Text>
-      <Text style={styles.info}>Last Sign In: {new Date(session.user.last_sign_in_at || '').toLocaleString()}</Text>
-      
-      <TouchableOpacity 
-        style={[styles.button, styles.signOutButton]}
-        onPress={handleSignOut}
-      >
-        <Text style={styles.buttonText}>Sign Out</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>个人中心</Text>
+          <View style={styles.decorativeLine} />
+        </View>
+
+        <View style={styles.profileContainer}>
+          <View style={styles.infoItem}>
+            <Text style={styles.label}>邮箱</Text>
+            <Text style={styles.value}>{session.user.email}</Text>
+          </View>
+          
+          <View style={styles.infoItem}>
+            <Text style={styles.label}>用户 ID</Text>
+            <Text style={styles.value}>{session.user.id}</Text>
+          </View>
+          
+          <View style={styles.infoItem}>
+            <Text style={styles.label}>最近登录</Text>
+            <Text style={styles.value}>
+              {new Date(session.user.last_sign_in_at || '').toLocaleString()}
+            </Text>
+          </View>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+        >
+          <Text style={styles.buttonText}>退出登录</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
     padding: 20,
   },
+  headerContainer: {
+    alignItems: 'center',
+    marginVertical: 30,
+  },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  decorativeLine: {
+    width: 40,
+    height: 2,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 1,
+  },
+  formContainer: {
+    width: '100%',
+    paddingHorizontal: 20,
   },
   input: {
     width: '100%',
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 15,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    marginBottom: 16,
     paddingHorizontal: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#F9FAFB',
+    fontSize: 16,
+    color: Colors.light.text,
   },
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#0066cc',
-    borderRadius: 8,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
@@ -183,27 +243,45 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   switchButton: {
     marginTop: 20,
     padding: 10,
+    alignItems: 'center',
   },
   switchText: {
-    color: '#0066cc',
+    color: Colors.light.tint,
     fontSize: 14,
+    fontWeight: '500',
+  },
+  profileContainer: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  infoItem: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    color: Colors.light.icon,
+    marginBottom: 4,
+  },
+  value: {
+    fontSize: 16,
+    color: Colors.light.text,
+    fontWeight: '500',
   },
   signOutButton: {
-    backgroundColor: '#ff3b30',
-    marginTop: 20,
-  },
-  email: {
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  info: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+    width: '100%',
+    height: 50,
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 'auto',
+    marginBottom: 20,
   },
 });
