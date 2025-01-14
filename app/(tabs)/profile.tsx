@@ -22,6 +22,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { Colors } from '../../constants/Colors';
+import { router } from 'expo-router';
 
 // Define the Profile type
 type Profile = {
@@ -198,6 +199,15 @@ export default function ProfileScreen() {
             </Text>
           </View>
 
+          {profile?.role === 'supplier' && (
+            <TouchableOpacity 
+              style={styles.actionLink}
+              onPress={() => router.push('/product/new')}
+            >
+              <Text style={styles.actionLinkText}>添加新商品</Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.infoItem}>
             <Text style={styles.label}>用户 ID</Text>
             <Text style={styles.value}>{session.user.id}</Text>
@@ -312,6 +322,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.text,
     fontWeight: '500',
+  },
+  actionLink: {
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  actionLinkText: {
+    color: Colors.light.tint,
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   signOutButton: {
     width: '100%',
