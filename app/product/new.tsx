@@ -15,13 +15,29 @@ import {
   ScrollView,
   SafeAreaView,
   Modal,
-  Pressable,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import { supabase } from '../../lib/supabase';
+
+// Hide the header for this screen
+export const unstable_settings = {
+  initialRouteName: 'new',
+};
 
 const UNITS = ['lb', 'kg', 'g', '500g', 'piece', 'box'] as const;
 type UnitType = typeof UNITS[number];
+
+interface FormErrors {
+  name?: string;
+  origin?: string;
+  price?: string;
+  stock?: string;
+}
 
 export default function NewProductScreen() {
   const [name, setName] = useState('');
@@ -32,112 +48,237 @@ export default function NewProductScreen() {
   const [imageUrl, setImageUrl] = useState('');
   const [stock, setStock] = useState('');
   const [showUnitModal, setShowUnitModal] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectUnit = (selectedUnit: UnitType) => {
     setUnit(selectedUnit);
     setShowUnitModal(false);
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!name.trim()) {
+      newErrors.name = '请输入商品名称';
+    }
+
+    if (!origin.trim()) {
+      newErrors.origin = '请输入产地';
+    }
+
+    const priceNum = parseFloat(price);
+    if (!price || isNaN(priceNum) || priceNum <= 0) {
+      newErrors.price = '请输入有效的价格';
+    }
+
+    const stockNum = parseInt(stock);
+    if (!stock || isNaN(stockNum) || stockNum < 0) {
+      newErrors.stock = '请输入有效的库存数量';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      Alert.alert('错误', '请检查表单填写是否正确');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // 获取当前登录用户
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('未登录或会话已过期');
+      }
+
+      // 创建新商品
+      const { error: insertError } = await supabase
+        .from('products')
+        .insert({
+          name: name.trim(),
+          origin: origin.trim(),
+          unit,
+          price: parseFloat(price),
+          stock: parseInt(stock),
+          description: description.trim() || null,
+          image_url: imageUrl.trim() || null,
+          supplier_id: user.id,
+          is_active: true,
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      Alert.alert(
+        '成功',
+        '商品创建成功',
+        [
+          {
+            text: '确定',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        '错误',
+        error.message || '创建商品失败，请稍后重试'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderError = (error?: string) => {
+    if (!error) return null;
+    return <Text style={styles.errorText}>{error}</Text>;
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>返回</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>添加新商品</Text>
+      </View>
+
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      >
+        <ScrollView 
+          style={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollViewContent}
+        >
+          <View style={styles.form}>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>商品名称</Text>
+              <TextInput
+                style={[styles.input, errors.name && styles.inputError]}
+                value={name}
+                onChangeText={(text) => {
+                  setName(text);
+                  setErrors({ ...errors, name: undefined });
+                }}
+                placeholder="请输入商品名称"
+                placeholderTextColor={Colors.light.icon}
+              />
+              {renderError(errors.name)}
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>产地</Text>
+              <TextInput
+                style={[styles.input, errors.origin && styles.inputError]}
+                value={origin}
+                onChangeText={(text) => {
+                  setOrigin(text);
+                  setErrors({ ...errors, origin: undefined });
+                }}
+                placeholder="请输入产地"
+                placeholderTextColor={Colors.light.icon}
+              />
+              {renderError(errors.origin)}
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>计量单位</Text>
+              <TouchableOpacity 
+                style={styles.unitSelector}
+                onPress={() => setShowUnitModal(true)}
+              >
+                <Text style={styles.unitText}>{unit}</Text>
+                <Text style={styles.unitSelectorIcon}>▼</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>单价</Text>
+              <TextInput
+                style={[styles.input, errors.price && styles.inputError]}
+                value={price}
+                onChangeText={(text) => {
+                  setPrice(text);
+                  setErrors({ ...errors, price: undefined });
+                }}
+                placeholder="请输入单价"
+                keyboardType="decimal-pad"
+                placeholderTextColor={Colors.light.icon}
+              />
+              {renderError(errors.price)}
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>库存数量</Text>
+              <TextInput
+                style={[styles.input, errors.stock && styles.inputError]}
+                value={stock}
+                onChangeText={(text) => {
+                  setStock(text);
+                  setErrors({ ...errors, stock: undefined });
+                }}
+                placeholder="请输入库存数量"
+                keyboardType="number-pad"
+                placeholderTextColor={Colors.light.icon}
+              />
+              {renderError(errors.stock)}
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>商品图片URL（可选）</Text>
+              <TextInput
+                style={styles.input}
+                value={imageUrl}
+                onChangeText={setImageUrl}
+                placeholder="请输入商品图片URL"
+                placeholderTextColor={Colors.light.icon}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>商品描述（可选）</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="请输入商品描述"
+                multiline
+                numberOfLines={4}
+                placeholderTextColor={Colors.light.icon}
+              />
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={styles.submitButtonContainer}>
           <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
           >
-            <Text style={styles.backButtonText}>返回</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>添加新商品</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>商品名称</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="请输入商品名称"
-              placeholderTextColor={Colors.light.icon}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>产地</Text>
-            <TextInput
-              style={styles.input}
-              value={origin}
-              onChangeText={setOrigin}
-              placeholder="请输入产地"
-              placeholderTextColor={Colors.light.icon}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>计量单位</Text>
-            <TouchableOpacity 
-              style={styles.unitSelector}
-              onPress={() => setShowUnitModal(true)}
-            >
-              <Text style={styles.unitText}>{unit}</Text>
-              <Text style={styles.unitSelectorIcon}>▼</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>单价</Text>
-            <TextInput
-              style={styles.input}
-              value={price}
-              onChangeText={setPrice}
-              placeholder="请输入单价"
-              keyboardType="decimal-pad"
-              placeholderTextColor={Colors.light.icon}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>库存数量</Text>
-            <TextInput
-              style={styles.input}
-              value={stock}
-              onChangeText={setStock}
-              placeholder="请输入库存数量"
-              keyboardType="number-pad"
-              placeholderTextColor={Colors.light.icon}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>商品图片URL</Text>
-            <TextInput
-              style={styles.input}
-              value={imageUrl}
-              onChangeText={setImageUrl}
-              placeholder="请输入商品图片URL"
-              placeholderTextColor={Colors.light.icon}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>商品描述</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="请输入商品描述"
-              multiline
-              numberOfLines={4}
-              placeholderTextColor={Colors.light.icon}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.submitButton}>
-            <Text style={styles.submitButtonText}>创建商品</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>创建商品</Text>
+            )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </KeyboardAvoidingView>
 
       <Modal
         visible={showUnitModal}
@@ -179,6 +320,7 @@ export default function NewProductScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+    </>
   );
 }
 
@@ -187,8 +329,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
-  container: {
+  keyboardAvoidingView: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
@@ -196,6 +344,8 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    backgroundColor: Colors.light.background,
+    zIndex: 1,
   },
   backButton: {
     marginRight: 16,
@@ -211,6 +361,7 @@ const styles = StyleSheet.create({
   },
   form: {
     padding: 16,
+    paddingBottom: 32,
   },
   formGroup: {
     marginBottom: 20,
@@ -230,16 +381,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     color: Colors.light.text,
   },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    marginTop: 4,
+  },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  submitButtonContainer: {
+    padding: 16,
+    backgroundColor: Colors.light.background,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   submitButton: {
     backgroundColor: Colors.light.tint,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     color: '#fff',
