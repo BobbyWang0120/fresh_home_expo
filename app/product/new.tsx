@@ -5,7 +5,7 @@
  * Form fields match the products table schema.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -40,6 +40,7 @@ interface FormErrors {
   origin?: string;
   price?: string;
   stock?: string;
+  category?: string;
 }
 
 export default function NewProductScreen() {
@@ -51,12 +52,65 @@ export default function NewProductScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [stock, setStock] = useState('');
   const [showUnitModal, setShowUnitModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category')
+        .not('category', 'eq', '')
+        .order('category');
+
+      if (error) throw error;
+
+      // 获取唯一的分类列表
+      const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
+      setCategories(uniqueCategories);
+    } catch (error) {
+      Alert.alert('错误', '获取分类列表失败');
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
 
   const selectUnit = (selectedUnit: UnitType) => {
     setUnit(selectedUnit);
     setShowUnitModal(false);
+  };
+
+  const selectCategory = (selectedCategory: string) => {
+    if (selectedCategory === 'new') {
+      setShowNewCategoryInput(true);
+    } else {
+      setCategory(selectedCategory);
+      setShowCategoryModal(false);
+      setShowNewCategoryInput(false);
+      setErrors({ ...errors, category: undefined });
+    }
+  };
+
+  const handleNewCategory = () => {
+    if (!newCategory.trim()) {
+      return;
+    }
+    setCategory(newCategory.trim());
+    setCategories([...categories, newCategory.trim()]);
+    setNewCategory('');
+    setShowNewCategoryInput(false);
+    setShowCategoryModal(false);
+    setErrors({ ...errors, category: undefined });
   };
 
   const pickImage = async () => {
@@ -131,6 +185,10 @@ export default function NewProductScreen() {
       newErrors.origin = '请输入产地';
     }
 
+    if (!category.trim()) {
+      newErrors.category = '请选择或输入分类';
+    }
+
     const priceNum = parseFloat(price);
     if (!price || isNaN(priceNum) || priceNum <= 0) {
       newErrors.price = '请输入有效的价格';
@@ -180,6 +238,7 @@ export default function NewProductScreen() {
           image_url: imageUrl,
           supplier_id: user.id,
           is_active: true,
+          category: category.trim(),
         });
 
       if (insertError) {
@@ -275,6 +334,22 @@ export default function NewProductScreen() {
                   <Text style={styles.unitText}>{unit}</Text>
                   <Text style={styles.unitSelectorIcon}>▼</Text>
                 </TouchableOpacity>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>商品分类</Text>
+                <TouchableOpacity 
+                  style={[styles.input, errors.category && styles.inputError]}
+                  onPress={() => setShowCategoryModal(true)}
+                >
+                  <Text style={[
+                    styles.categoryText,
+                    !category && styles.placeholderText
+                  ]}>
+                    {category || '请选择商品分类'}
+                  </Text>
+                </TouchableOpacity>
+                {renderError(errors.category)}
               </View>
 
               <View style={styles.formGroup}>
@@ -394,6 +469,87 @@ export default function NewProductScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showCategoryModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowCategoryModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>选择商品分类</Text>
+                <TouchableOpacity 
+                  onPress={() => {
+                    setShowCategoryModal(false);
+                    setShowNewCategoryInput(false);
+                    setNewCategory('');
+                  }}
+                  style={styles.modalCloseButton}
+                >
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {isLoadingCategories ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.light.tint} />
+                </View>
+              ) : (
+                <View style={styles.categoryList}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categoryOption,
+                        category === cat && styles.categoryOptionSelected
+                      ]}
+                      onPress={() => selectCategory(cat)}
+                    >
+                      <Text style={[
+                        styles.categoryOptionText,
+                        category === cat && styles.categoryOptionTextSelected
+                      ]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                  
+                  <TouchableOpacity
+                    style={styles.newCategoryButton}
+                    onPress={() => selectCategory('new')}
+                  >
+                    <Text style={styles.newCategoryButtonText}>+ 新建分类</Text>
+                  </TouchableOpacity>
+
+                  {showNewCategoryInput && (
+                    <View style={styles.newCategoryInputContainer}>
+                      <TextInput
+                        style={styles.newCategoryInput}
+                        value={newCategory}
+                        onChangeText={setNewCategory}
+                        placeholder="请输入新分类名称"
+                        placeholderTextColor={Colors.light.icon}
+                        autoFocus
+                      />
+                      <TouchableOpacity
+                        style={[
+                          styles.newCategorySubmitButton,
+                          !newCategory.trim() && styles.newCategorySubmitButtonDisabled
+                        ]}
+                        onPress={handleNewCategory}
+                        disabled={!newCategory.trim()}
+                      >
+                        <Text style={styles.newCategorySubmitButtonText}>确定</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -582,6 +738,84 @@ const styles = StyleSheet.create({
   },
   unitOptionTextSelected: {
     color: Colors.light.tint,
+    fontWeight: '600',
+  },
+  categoryText: {
+    fontSize: 16,
+    color: Colors.light.text,
+  },
+  placeholderText: {
+    color: Colors.light.icon,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  categoryList: {
+    padding: 16,
+  },
+  categoryOption: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  categoryOptionSelected: {
+    backgroundColor: Colors.light.tint + '15',
+  },
+  categoryOptionText: {
+    fontSize: 16,
+    color: Colors.light.text,
+    textAlign: 'center',
+  },
+  categoryOptionTextSelected: {
+    color: Colors.light.tint,
+    fontWeight: '600',
+  },
+  newCategoryButton: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: Colors.light.tint + '15',
+    borderWidth: 1,
+    borderColor: Colors.light.tint,
+    borderStyle: 'dashed',
+  },
+  newCategoryButtonText: {
+    fontSize: 16,
+    color: Colors.light.tint,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  newCategoryInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  newCategoryInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#F9FAFB',
+    color: Colors.light.text,
+    marginRight: 8,
+  },
+  newCategorySubmitButton: {
+    backgroundColor: Colors.light.tint,
+    padding: 12,
+    borderRadius: 8,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  newCategorySubmitButtonDisabled: {
+    opacity: 0.7,
+  },
+  newCategorySubmitButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
