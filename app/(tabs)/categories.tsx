@@ -1,271 +1,285 @@
-import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList, Image, Dimensions, RefreshControl } from 'react-native';
-import { categories, products, Category, Product } from '../../data/categories';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+} from 'react-native';
+import { supabase } from '../../lib/supabase';
+import { Colors } from '../../constants/Colors';
+import { router } from 'expo-router';
 
-const { width } = Dimensions.get('window');
-const CONTAINER_PADDING = 16;
-const CARD_GAP = 12;
-const PRODUCT_WIDTH = (width - (CONTAINER_PADDING * 2) - CARD_GAP) / 2;
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  image_url: string | null;
+  category: string;
+  unit: string;
+  stock: number;
+}
 
 export default function CategoriesScreen() {
-  const insets = useSafeAreaInsets();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [refreshing, setRefreshing] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const filteredProducts = useCallback(() => {
-    if (selectedCategory === 'all') {
-      return products;
-    }
-    return products.filter(product => product.category === selectedCategory);
-  }, [selectedCategory]);
+  const fetchProducts = async () => {
+    try {
+      // 获取所有商品
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
 
-  const handleCategoryPress = (category: Category | null) => {
-    if (category) {
-      setSelectedCategory(category.id);
-    } else {
-      setSelectedCategory('all');
+      if (productsError) throw productsError;
+
+      setProducts(productsData);
+
+      // 获取所有唯一的分类
+      const uniqueCategories = Array.from(
+        new Set(productsData.map(product => product.category))
+      ).filter(Boolean);
+
+      setCategories(['All', ...uniqueCategories]);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    // 模拟刷新操作
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setRefreshing(false);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    fetchProducts();
   };
 
-  const renderCategoryItem = ({ item }: { item: typeof categories[0] }) => (
-    <TouchableOpacity style={styles.categoryItem} onPress={() => handleCategoryPress(item)}>
-      <Text style={styles.categoryIcon}>{item.icon}</Text>
-      <View style={styles.categoryTextContainer}>
-        <Text style={styles.categoryName}>{item.name}</Text>
-        <Text style={styles.categoryNameEn}>{item.nameEn}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const filteredProducts = selectedCategory === 'All'
+    ? products
+    : products.filter(product => product.category === selectedCategory);
 
-  const renderProductItem = ({ item }: { item: typeof products[0] }) => (
-    <TouchableOpacity style={styles.productCard}>
-      <Image source={{ uri: item.image }} style={styles.productImage} />
+  const renderProduct = (product: Product) => (
+    <TouchableOpacity
+      key={product.id}
+      style={styles.productCard}
+      onPress={() => router.push(`/product/${product.id}`)}
+    >
+      {product.image_url ? (
+        <Image
+          source={{ uri: product.image_url }}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.noImage}>
+          <Text style={styles.noImageText}>暂无图片</Text>
+        </View>
+      )}
       <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.productNameEn} numberOfLines={1}>{item.nameEn}</Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}/{item.unit}</Text>
-        {item.originalPrice > item.price && (
-          <Text style={styles.originalPrice}>${item.originalPrice.toFixed(2)}/{item.unit}</Text>
-        )}
-        <Text style={styles.origin}>{item.origin}</Text>
+        <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+        <Text style={styles.productPrice}>¥{product.price}/{product.unit}</Text>
+        <Text style={styles.productStock}>库存: {product.stock}</Text>
       </View>
     </TouchableOpacity>
   );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.light.tint} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>分类</Text>
-        </View>
-
-        {/* Categories List */}
-        <View style={styles.categoriesWrapper}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoriesContainer}
-            contentContainerStyle={styles.categoriesContent}
-          >
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>分类</Text>
+      </View>
+      
+      <View style={styles.categoriesWrapper}>
+        <ScrollView
+          horizontal
+          style={styles.categoriesContainer}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {categories.map((category) => (
             <TouchableOpacity
+              key={category}
               style={[
                 styles.categoryButton,
-                selectedCategory === 'all' && styles.categoryButtonActive
+                selectedCategory === category && styles.categoryButtonSelected
               ]}
-              onPress={() => handleCategoryPress(null)}
+              onPress={() => setSelectedCategory(category)}
             >
               <Text style={[
-                styles.categoryName,
-                selectedCategory === 'all' && styles.categoryNameActive
-              ]}>全部</Text>
+                styles.categoryButtonText,
+                selectedCategory === category && styles.categoryButtonTextSelected
+              ]}>
+                {category}
+              </Text>
             </TouchableOpacity>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryButton,
-                  selectedCategory === category.id && styles.categoryButtonActive
-                ]}
-                onPress={() => handleCategoryPress(category)}
-              >
-                <Text style={[
-                  styles.categoryName,
-                  selectedCategory === category.id && styles.categoryNameActive
-                ]}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Products Grid */}
-        <FlatList
-          data={filteredProducts()}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.productsContainer}
-          columnWrapperStyle={styles.productRow}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor="#666"
-              colors={['#666']}
-            />
-          }
-        />
+          ))}
+        </ScrollView>
       </View>
-    </>
+
+      <ScrollView
+        style={styles.productsContainer}
+        contentContainerStyle={styles.productsContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+          />
+        }
+      >
+        {filteredProducts.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>该分类下暂无商品</Text>
+          </View>
+        ) : (
+          <View style={styles.productsGrid}>
+            {filteredProducts.map(renderProduct)}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.light.background,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: Colors.light.background,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.light.text,
   },
   categoriesWrapper: {
+    backgroundColor: Colors.light.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    overflow: 'hidden',
+    borderBottomColor: '#E5E7EB',
   },
   categoriesContainer: {
-    height: 50,
+    height: 44,
   },
   categoriesContent: {
-    paddingHorizontal: 20,
-    height: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryButton: {
-    height: '100%',
     paddingHorizontal: 16,
-    marginRight: 15,
+    paddingVertical: 6,
+    marginHorizontal: 4,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
   },
-  categoryButtonActive: {
-    borderBottomColor: '#4CAF50',
+  categoryButtonSelected: {
+    backgroundColor: Colors.light.tint,
   },
-  categoryName: {
-    fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
+  categoryButtonText: {
+    fontSize: 14,
+    color: Colors.light.text,
   },
-  categoryNameActive: {
-    color: '#4CAF50',
+  categoryButtonTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   productsContainer: {
-    paddingHorizontal: CONTAINER_PADDING,
-    paddingVertical: CONTAINER_PADDING,
+    flex: 1,
   },
-  productRow: {
+  productsContent: {
+    padding: 12,
+  },
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: CARD_GAP,
   },
   productCard: {
-    width: PRODUCT_WIDTH,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    width: '48%',
+    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   productImage: {
     width: '100%',
-    height: PRODUCT_WIDTH,
-    backgroundColor: '#f5f5f5',
-    resizeMode: 'cover',
+    height: 150,
+    backgroundColor: '#F3F4F6',
+  },
+  noImage: {
+    width: '100%',
+    height: 150,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noImageText: {
+    color: Colors.light.icon,
+    fontSize: 14,
   },
   productInfo: {
-    padding: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    padding: 8,
   },
   productName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  productNameEn: {
-    fontSize: 12,
-    color: '#666',
+    color: Colors.light.text,
     marginBottom: 4,
   },
   productPrice: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: Colors.light.tint,
     fontWeight: '600',
+    marginBottom: 2,
   },
-  originalPrice: {
+  productStock: {
     fontSize: 12,
-    color: '#999',
-    textDecorationLine: 'line-through',
+    color: Colors.light.icon,
   },
-  origin: {
-    fontSize: 12,
-    color: '#666',
-  },
-  categoryItem: {
-    flexDirection: 'row',
+  emptyContainer: {
+    padding: 20,
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
   },
-  categoryIcon: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  categoryTextContainer: {
-    flexDirection: 'column',
-  },
-  categoryName: {
+  emptyText: {
     fontSize: 16,
-    fontWeight: '600',
-  },
-  categoryNameEn: {
-    fontSize: 12,
-    color: '#666',
+    color: Colors.light.icon,
   },
 });
