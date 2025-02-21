@@ -20,6 +20,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  FlatList,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { router, Stack } from 'expo-router';
@@ -40,12 +41,19 @@ interface Category {
   name: string;
 }
 
+interface ProductImage {
+  uri: string;
+  isPrimary: boolean;
+  sortOrder: number;
+}
+
 interface FormErrors {
   name?: string;
   origin?: string;
   price?: string;
   stock?: string;
   category?: string;
+  images?: string;
 }
 
 export default function NewProductScreen() {
@@ -54,7 +62,7 @@ export default function NewProductScreen() {
   const [unit, setUnit] = useState<UnitType>('kg');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<ProductImage[]>([]);
   const [stock, setStock] = useState('');
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -132,28 +140,53 @@ export default function NewProductScreen() {
     }
   };
 
-  const pickImage = async () => {
+  const pickImages = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsMultipleSelection: true,
         quality: 0.8,
         base64: true,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
+      if (!result.canceled && result.assets.length > 0) {
+        const newImages = result.assets.map((asset, index) => ({
+          uri: asset.uri,
+          isPrimary: selectedImages.length === 0 && index === 0, // 第一张图片作为主图
+          sortOrder: selectedImages.length + index,
+        }));
+        setSelectedImages([...selectedImages, ...newImages]);
+        setErrors({ ...errors, images: undefined });
       }
     } catch (error) {
       Alert.alert('错误', '选择图片时出错');
     }
   };
 
-  const uploadImage = async (uri: string): Promise<string> => {
+  const removeImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    // 如果删除的是主图，将第一张图片设为主图
+    if (selectedImages[index].isPrimary && newImages.length > 0) {
+      newImages[0].isPrimary = true;
+    }
+    setSelectedImages(newImages);
+    if (newImages.length === 0) {
+      setErrors({ ...errors, images: '请至少上传一张商品图片' });
+    }
+  };
+
+  const setAsPrimaryImage = (index: number) => {
+    const newImages = selectedImages.map((img, i) => ({
+      ...img,
+      isPrimary: i === index,
+    }));
+    setSelectedImages(newImages);
+  };
+
+  const uploadImageToStorage = async (uri: string): Promise<string> => {
     try {
       const ext = uri.substring(uri.lastIndexOf('.') + 1);
-      const fileName = `${Date.now()}.${ext}`;
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
       const response = await fetch(uri);
       const blob = await response.blob();
       const reader = new FileReader();
@@ -203,6 +236,10 @@ export default function NewProductScreen() {
       newErrors.category = '请选择商品分类';
     }
 
+    if (selectedImages.length === 0) {
+      newErrors.images = '请至少上传一张商品图片';
+    }
+
     const priceNum = parseFloat(price);
     if (!price || isNaN(priceNum) || priceNum <= 0) {
       newErrors.price = '请输入有效的价格';
@@ -232,31 +269,40 @@ export default function NewProductScreen() {
         throw new Error('未登录或会话已过期');
       }
 
-      let imageUrl = null;
-      if (selectedImage) {
-        imageUrl = await uploadImage(selectedImage);
-      }
-
-      const priceValue = parseFloat(price);
-      const { error: insertError } = await supabase
+      // 创建商品
+      const { data: product, error: productError } = await supabase
         .from('products')
         .insert({
           name: name.trim(),
           origin: origin.trim(),
           unit,
-          price: priceValue,
-          discounted_price: priceValue, // 初始折扣价等于原价
+          price: parseFloat(price),
+          discounted_price: parseFloat(price), // 初始折扣价等于原价
           stock: parseInt(stock),
           description: description.trim() || null,
-          image_url: imageUrl,
           supplier_id: user.id,
           is_active: true,
-          category: selectedCategory?.name, // 使用分类名称
-        });
+          category: selectedCategory?.name,
+        })
+        .select()
+        .single();
 
-      if (insertError) {
-        throw insertError;
-      }
+      if (productError) throw productError;
+
+      // 上传图片并创建图片记录
+      const imagePromises = selectedImages.map(async (image) => {
+        const storagePath = await uploadImageToStorage(image.uri);
+        return supabase
+          .from('product_images')
+          .insert({
+            product_id: product.id,
+            storage_path: storagePath,
+            is_primary: image.isPrimary,
+            sort_order: image.sortOrder,
+          });
+      });
+
+      await Promise.all(imagePromises);
 
       Alert.alert(
         '成功',
@@ -282,6 +328,54 @@ export default function NewProductScreen() {
     if (!error) return null;
     return <Text style={styles.errorText}>{error}</Text>;
   };
+
+  // 渲染图片列表
+  const renderImageList = () => (
+    <View style={styles.imageList}>
+      <TouchableOpacity 
+        style={styles.addImageButton}
+        onPress={pickImages}
+      >
+        <Text style={styles.addImageButtonText}>+ 添加图片</Text>
+      </TouchableOpacity>
+      <FlatList
+        horizontal
+        data={selectedImages}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={({ item, index }) => (
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: item.uri }} style={styles.imagePreview} />
+            <View style={styles.imageActions}>
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  item.isPrimary && styles.primaryButtonActive
+                ]}
+                onPress={() => setAsPrimaryImage(index)}
+                disabled={item.isPrimary}
+              >
+                <Text style={[
+                  styles.primaryButtonText,
+                  item.isPrimary && styles.primaryButtonTextActive
+                ]}>
+                  {item.isPrimary ? '主图' : '设为主图'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => removeImage(index)}
+              >
+                <Text style={styles.removeButtonText}>删除</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.imageListContent}
+      />
+      {errors.images && <Text style={styles.errorText}>{errors.images}</Text>}
+    </View>
+  );
 
   return (
     <>
@@ -398,22 +492,8 @@ export default function NewProductScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>商品图片（可选）</Text>
-                <TouchableOpacity 
-                  style={styles.imageUploadButton} 
-                  onPress={pickImage}
-                >
-                  {selectedImage ? (
-                    <Image 
-                      source={{ uri: selectedImage }} 
-                      style={styles.previewImage} 
-                    />
-                  ) : (
-                    <View style={styles.uploadPlaceholder}>
-                      <Text style={styles.uploadText}>点击选择图片</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+                <Text style={styles.label}>商品图片</Text>
+                {renderImageList()}
               </View>
 
               <View style={styles.formGroup}>
@@ -638,28 +718,74 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  imageUploadButton: {
-    width: '100%',
-    height: 200,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+  imageList: {
+    marginTop: 8,
+  },
+  imageListContent: {
+    paddingVertical: 8,
+  },
+  imageContainer: {
+    marginRight: 12,
     borderRadius: 8,
     overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
   },
-  previewImage: {
-    width: '100%',
-    height: '100%',
+  imagePreview: {
+    width: 120,
+    height: 120,
     resizeMode: 'cover',
   },
-  uploadPlaceholder: {
-    flex: 1,
+  imageActions: {
+    padding: 8,
+  },
+  primaryButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#000000',
+    marginBottom: 4,
+  },
+  primaryButtonActive: {
+    backgroundColor: '#000000',
+  },
+  primaryButtonText: {
+    fontSize: 12,
+    color: '#000000',
+    textAlign: 'center',
+  },
+  primaryButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  removeButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
+  },
+  removeButtonText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  addImageButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    marginBottom: 8,
   },
-  uploadText: {
-    color: '#666666',
+  addImageButtonText: {
     fontSize: 16,
+    color: '#000000',
+    fontWeight: '500',
   },
   submitButtonContainer: {
     padding: 16,
