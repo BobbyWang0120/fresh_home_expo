@@ -9,11 +9,14 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
-  FlatList
+  FlatList,
+  Platform,
+  StatusBar
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { SearchBar } from '@/components/home/SearchBar';
+import { Ionicons } from '@expo/vector-icons';
 
 // Types
 interface Category {
@@ -97,6 +100,21 @@ export default function HomeScreen() {
     loadData();
   };
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.searchContainer}>
+        <SearchBar 
+          onFocus={() => setSearchMode(true)}
+          onBack={() => setSearchMode(false)}
+          isSearchMode={searchMode}
+        />
+      </View>
+      <TouchableOpacity style={styles.cartButton} onPress={() => {}}>
+        <Ionicons name="cart-outline" size={24} color="#000000" />
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderCategoryItem = ({ item }: { item: Category }) => (
     <TouchableOpacity
       style={[
@@ -141,14 +159,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <SearchBar 
-        onFocus={() => setSearchMode(true)}
-        onBack={() => setSearchMode(false)}
-        isSearchMode={searchMode}
-      />
-      
+      <StatusBar barStyle="dark-content" />
       {!searchMode && (
         <>
+          {renderHeader()}
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#000000" />
@@ -203,9 +217,32 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+  },
+  searchContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  cartButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
+    backgroundColor: '#F8F8F8',
   },
   loadingContainer: {
     flex: 1,
@@ -213,9 +250,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoriesContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
     backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
   categoriesList: {
     paddingHorizontal: 16,
@@ -240,19 +280,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   productsGrid: {
-    padding: 8,
+    padding: 12,
   },
   productRow: {
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
   },
   productCard: {
-    width: '48%',
+    width: '48.5%',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
     overflow: 'hidden',
   },
   productImage: {
@@ -268,6 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#000000',
     marginBottom: 4,
+    lineHeight: 20,
   },
   productOrigin: {
     fontSize: 12,
