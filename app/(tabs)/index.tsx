@@ -15,9 +15,10 @@ import {
   Alert
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { SearchBar } from '@/components/home/SearchBar';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Types
 interface Category {
@@ -64,6 +65,13 @@ export default function HomeScreen() {
       loadProducts();
     }
   }, [selectedCategory]);
+
+  // 添加页面焦点监听
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCartItemCount();
+    }, [])
+  );
 
   const loadInitialData = async () => {
     try {
