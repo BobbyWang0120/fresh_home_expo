@@ -6,7 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { PlatformPressable } from '@react-navigation/elements';
 
-const activeColor = '#4CAF50';
+const activeColor = '#000000';
+const inactiveColor = '#666666';
 
 function TabButton(props: BottomTabBarButtonProps) {
   return (
@@ -25,24 +26,22 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: activeColor,
-        tabBarInactiveTintColor: '#666',
+        tabBarInactiveTintColor: inactiveColor,
         headerShown: false,
         tabBarButton: TabButton,
         tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E5E5E5',
           ...Platform.select({
-            ios: {
-              backgroundColor: '#fff',
-              borderTopWidth: 1,
-              borderTopColor: '#f0f0f0',
-            },
             android: {
-              backgroundColor: '#fff',
               elevation: 8,
             },
           }),
         },
         tabBarLabelStyle: {
           fontSize: 12,
+          fontWeight: '500',
         },
       }}>
       <Tabs.Screen
@@ -53,7 +52,7 @@ export default function TabLayout() {
             <Ionicons 
               name={focused ? "home" : "home-outline"} 
               size={size} 
-              color={focused ? activeColor : '#666'} 
+              color={focused ? activeColor : inactiveColor} 
             />
           ),
         }}
@@ -66,7 +65,7 @@ export default function TabLayout() {
             <Ionicons 
               name={focused ? "grid" : "grid-outline"} 
               size={size} 
-              color={focused ? activeColor : '#666'} 
+              color={focused ? activeColor : inactiveColor} 
             />
           ),
         }}
@@ -79,7 +78,7 @@ export default function TabLayout() {
             <Ionicons 
               name={focused ? "receipt" : "receipt-outline"} 
               size={size} 
-              color={focused ? activeColor : '#666'} 
+              color={focused ? activeColor : inactiveColor} 
             />
           ),
         }}
@@ -92,7 +91,7 @@ export default function TabLayout() {
             <Ionicons 
               name={focused ? "person" : "person-outline"} 
               size={size} 
-              color={focused ? activeColor : '#666'} 
+              color={focused ? activeColor : inactiveColor} 
             />
           ),
         }}
