@@ -184,6 +184,45 @@ export default function CartScreen() {
     Alert.alert('提示', '结算功能开发中');
   };
 
+  const deleteCartItem = async (cartItemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('id', cartItemId);
+
+      if (error) throw error;
+
+      // 更新本地状态
+      setCartItems(prev => prev.filter(item => item.id !== cartItemId));
+      setSelectedItems(prev => prev.filter(id => id !== cartItemId));
+
+      // 通知用户
+      Alert.alert('成功', '商品已从购物车中移除');
+    } catch (error) {
+      console.error('Error deleting cart item:', error);
+      Alert.alert('错误', '删除商品失败');
+    }
+  };
+
+  const handleDelete = (cartItemId: string) => {
+    Alert.alert(
+      '确认删除',
+      '确定要将此商品从购物车中删除吗？',
+      [
+        {
+          text: '取消',
+          style: 'cancel'
+        },
+        {
+          text: '确定',
+          style: 'destructive',
+          onPress: () => deleteCartItem(cartItemId)
+        }
+      ]
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -242,7 +281,15 @@ export default function CartScreen() {
                   />
                   
                   <View style={styles.productInfo}>
-                    <Text style={styles.productName}>{item.product.name}</Text>
+                    <View style={styles.productHeader}>
+                      <Text style={styles.productName}>{item.product.name}</Text>
+                      <TouchableOpacity
+                        onPress={() => handleDelete(item.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#666" />
+                      </TouchableOpacity>
+                    </View>
                     <Text style={styles.productPrice}>
                       ¥{item.product.discounted_price}/{item.product.unit}
                     </Text>
@@ -366,11 +413,22 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
   },
+  productHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  deleteButton: {
+    padding: 4,
+    marginRight: -4,
+  },
   productName: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: '#000',
-    marginBottom: 4,
+    marginRight: 8,
   },
   productPrice: {
     fontSize: 14,
