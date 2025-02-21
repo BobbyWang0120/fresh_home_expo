@@ -1,26 +1,26 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Color scheme for the app using a minimalist black and white theme.
+ * This modern approach creates a clean, sophisticated look that emphasizes content and functionality.
  */
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#000000';
+const tintColorDark = '#FFFFFF';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#000000',          // Pure black for primary text
+    background: '#FFFFFF',     // Pure white for background
+    tint: tintColorLight,     // Black for interactive elements
+    icon: '#666666',          // Dark gray for secondary elements
+    tabIconDefault: '#666666', // Dark gray for inactive tabs
+    tabIconSelected: tintColorLight, // Black for active tabs
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#FFFFFF',          // Pure white for primary text
+    background: '#000000',    // Pure black for background
+    tint: tintColorDark,     // White for interactive elements
+    icon: '#999999',         // Light gray for secondary elements
+    tabIconDefault: '#999999', // Light gray for inactive tabs
+    tabIconSelected: tintColorDark, // White for active tabs
   },
 };

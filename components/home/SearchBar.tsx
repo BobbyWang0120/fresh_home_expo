@@ -31,7 +31,7 @@ export function SearchBar({ onFocus, onBack, isSearchMode }: SearchBarProps) {
         <TextInput
           ref={inputRef}
           style={styles.searchInput}
-          placeholder="Search fresh products..."
+          placeholder="搜索商品"
           placeholderTextColor="#999"
           onFocus={onFocus}
           returnKeyType="search"
