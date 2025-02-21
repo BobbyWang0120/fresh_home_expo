@@ -45,17 +45,26 @@ export default function HomeScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORY);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isProductsLoading, setIsProductsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
 
+  // 首次加载数据
   useEffect(() => {
-    loadData();
+    loadInitialData();
+  }, []);
+
+  // 监听分类变化加载商品
+  useEffect(() => {
+    if (!isInitialLoading) {
+      loadProducts();
+    }
   }, [selectedCategory]);
 
-  const loadData = async () => {
+  const loadInitialData = async () => {
     try {
-      setIsLoading(true);
+      setIsInitialLoading(true);
       
       // Fetch categories
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -66,6 +75,19 @@ export default function HomeScreen() {
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData);
 
+      // 加载商品
+      await loadProducts();
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  const loadProducts = async () => {
+    try {
+      setIsProductsLoading(true);
+      
       // Fetch products with their primary images
       let query = supabase
         .from('products')
@@ -105,16 +127,16 @@ export default function HomeScreen() {
       
       setProducts(filteredProducts);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading products:', error);
     } finally {
-      setIsLoading(false);
+      setIsProductsLoading(false);
       setIsRefreshing(false);
     }
   };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    loadData();
+    loadProducts();
   };
 
   const renderHeader = () => (
@@ -180,7 +202,7 @@ export default function HomeScreen() {
       {!searchMode && (
         <>
           {renderHeader()}
-          {isLoading ? (
+          {isInitialLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#000000" />
             </View>
@@ -191,8 +213,8 @@ export default function HomeScreen() {
                 <View style={styles.categoriesContainer}>
                   <FlatList
                     data={[
-                      { id: ALL_CATEGORY, name: '全部' },
-                      { id: DISCOUNTED_CATEGORY, name: '打折' },
+                      { id: ALL_CATEGORY, name: 'All' },
+                      { id: DISCOUNTED_CATEGORY, name: 'Discounted' },
                       ...categories
                     ]}
                     renderItem={renderCategoryItem}
@@ -221,13 +243,17 @@ export default function HomeScreen() {
                     }
                     ListEmptyComponent={
                       <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>
-                          {selectedCategory === DISCOUNTED_CATEGORY 
-                            ? '暂无打折商品'
-                            : selectedCategory === ALL_CATEGORY 
-                              ? '暂无商品'
-                              : '该分类暂无商品'}
-                        </Text>
+                        {isProductsLoading ? (
+                          <ActivityIndicator color="#000000" />
+                        ) : (
+                          <Text style={styles.emptyText}>
+                            {selectedCategory === DISCOUNTED_CATEGORY 
+                              ? '暂无打折商品'
+                              : selectedCategory === ALL_CATEGORY 
+                                ? '暂无商品'
+                                : '该分类暂无商品'}
+                          </Text>
+                        )}
                       </View>
                     }
                   />
