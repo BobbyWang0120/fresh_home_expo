@@ -24,6 +24,10 @@ interface Category {
   name: string;
 }
 
+// Special category types
+const ALL_CATEGORY = 'all';
+const DISCOUNTED_CATEGORY = 'discounted';
+
 interface Product {
   id: string;
   name: string;
@@ -40,7 +44,7 @@ interface Product {
 export default function HomeScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORY);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
@@ -76,17 +80,30 @@ export default function HomeScreen() {
         `)
         .eq('is_active', true);
 
-      if (selectedCategory) {
-        const category = categories.find(c => c.id === selectedCategory);
-        if (category) {
-          query = query.eq('category', category.name);
+      if (selectedCategory && selectedCategory !== ALL_CATEGORY) {
+        if (selectedCategory === DISCOUNTED_CATEGORY) {
+          // No additional query filter needed, we'll filter discounted products after fetching
+        } else {
+          const category = categories.find(c => c.id === selectedCategory);
+          if (category) {
+            query = query.eq('category', category.name);
+          }
         }
       }
 
       const { data: productsData, error: productsError } = await query;
 
       if (productsError) throw productsError;
-      setProducts(productsData);
+      
+      // Filter discounted products if needed
+      let filteredProducts = productsData;
+      if (selectedCategory === DISCOUNTED_CATEGORY) {
+        filteredProducts = productsData.filter(
+          product => product.discounted_price < product.price
+        );
+      }
+      
+      setProducts(filteredProducts);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -115,13 +132,13 @@ export default function HomeScreen() {
     </View>
   );
 
-  const renderCategoryItem = ({ item }: { item: Category }) => (
+  const renderCategoryItem = ({ item }: { item: Category | { id: string, name: string } }) => (
     <TouchableOpacity
       style={[
         styles.categoryItem,
         selectedCategory === item.id && styles.categoryItemSelected
       ]}
-      onPress={() => setSelectedCategory(selectedCategory === item.id ? null : item.id)}
+      onPress={() => setSelectedCategory(selectedCategory === item.id ? ALL_CATEGORY : item.id)}
     >
       <Text style={[
         styles.categoryText,
@@ -169,42 +186,53 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View style={styles.container}>
-              {/* Categories Section */}
-              <View style={styles.categoriesContainer}>
-                <FlatList
-                  horizontal
-                  data={categories}
-                  renderItem={renderCategoryItem}
-                  keyExtractor={item => item.id}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoriesList}
-                />
-              </View>
-
-              {/* Products Grid */}
-              <FlatList
-                data={products}
-                renderItem={renderProductItem}
-                keyExtractor={item => item.id}
-                numColumns={2}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.productsGrid}
-                columnWrapperStyle={styles.productRow}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={isRefreshing}
-                    onRefresh={handleRefresh}
-                    tintColor="#000000"
+              <View style={styles.contentContainer}>
+                {/* Categories Section - Left Side */}
+                <View style={styles.categoriesContainer}>
+                  <FlatList
+                    data={[
+                      { id: ALL_CATEGORY, name: '全部' },
+                      { id: DISCOUNTED_CATEGORY, name: '打折' },
+                      ...categories
+                    ]}
+                    renderItem={renderCategoryItem}
+                    keyExtractor={item => item.id}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.categoriesList}
                   />
-                }
-                ListEmptyComponent={
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>
-                      {selectedCategory ? '该分类暂无商品' : '暂无商品'}
-                    </Text>
-                  </View>
-                }
-              />
+                </View>
+
+                {/* Products Grid - Right Side */}
+                <View style={styles.productsContainer}>
+                  <FlatList
+                    data={products}
+                    renderItem={renderProductItem}
+                    keyExtractor={item => item.id}
+                    numColumns={2}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.productsGrid}
+                    columnWrapperStyle={styles.productRow}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        tintColor="#000000"
+                      />
+                    }
+                    ListEmptyComponent={
+                      <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                          {selectedCategory === DISCOUNTED_CATEGORY 
+                            ? '暂无打折商品'
+                            : selectedCategory === ALL_CATEGORY 
+                              ? '暂无商品'
+                              : '该分类暂无商品'}
+                        </Text>
+                      </View>
+                    }
+                  />
+                </View>
+              </View>
             </View>
           )}
         </>
@@ -224,8 +252,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
   },
   searchContainer: {
@@ -244,40 +270,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F8',
   },
+  contentContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   categoriesContainer: {
+    width: 100,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 3,
+    borderRightWidth: 1,
+    borderRightColor: '#F0F0F0',
   },
   categoriesList: {
-    paddingHorizontal: 16,
     paddingVertical: 12,
   },
   categoryItem: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
   },
   categoryItemSelected: {
-    backgroundColor: '#000000',
+    backgroundColor: '#F8F8F8',
+    borderLeftWidth: 3,
+    borderLeftColor: '#000000',
   },
   categoryText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#000000',
+    color: '#666666',
   },
   categoryTextSelected: {
-    color: '#FFFFFF',
+    color: '#000000',
+    fontWeight: '600',
+  },
+  productsContainer: {
+    flex: 1,
+    backgroundColor: '#F8F8F8',
   },
   productsGrid: {
     padding: 12,
