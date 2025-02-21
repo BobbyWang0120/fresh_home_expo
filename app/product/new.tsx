@@ -183,10 +183,14 @@ export default function NewProductScreen() {
     setSelectedImages(newImages);
   };
 
-  const uploadImageToStorage = async (uri: string): Promise<string> => {
+  const uploadImageToStorage = async (uri: string, productId: string): Promise<string> => {
     try {
       const ext = uri.substring(uri.lastIndexOf('.') + 1);
+      // 使用商品ID作为文件夹路径
+      const folderPath = `products/${productId}`;
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+      const fullPath = `${folderPath}/${fileName}`;
+      
       const response = await fetch(uri);
       const blob = await response.blob();
       const reader = new FileReader();
@@ -198,7 +202,7 @@ export default function NewProductScreen() {
             const base64Data = base64.split(',')[1];
             const { data, error } = await supabase.storage
               .from('product-images')
-              .upload(fileName, decode(base64Data), {
+              .upload(fullPath, decode(base64Data), {
                 contentType: `image/${ext}`,
               });
 
@@ -206,7 +210,7 @@ export default function NewProductScreen() {
 
             const { data: { publicUrl } } = supabase.storage
               .from('product-images')
-              .getPublicUrl(fileName);
+              .getPublicUrl(fullPath);
 
             resolve(publicUrl);
           } catch (error) {
@@ -291,7 +295,7 @@ export default function NewProductScreen() {
 
       // 上传图片并创建图片记录
       const imagePromises = selectedImages.map(async (image) => {
-        const storagePath = await uploadImageToStorage(image.uri);
+        const storagePath = await uploadImageToStorage(image.uri, product.id);
         return supabase
           .from('product_images')
           .insert({
