@@ -275,12 +275,10 @@ export default function HomeScreen() {
           resizeMode="cover"
         />
         <View style={styles.productInfo}>
-          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-          <Text style={styles.productOrigin}>{item.origin}</Text>
-          <View style={styles.productBottom}>
-            <View style={styles.priceContainer}>
-              <Text style={styles.price}>¥{item.discounted_price.toFixed(2)}</Text>
-              <Text style={styles.unit}>/{item.unit}</Text>
+          <View style={styles.productHeader}>
+            <View style={styles.productTitleContainer}>
+              <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+              <Text style={styles.productOrigin}>{item.origin}</Text>
             </View>
             <TouchableOpacity 
               style={styles.addToCartButton}
@@ -289,8 +287,12 @@ export default function HomeScreen() {
                 addToCart(item.id);
               }}
             >
-              <Ionicons name="add-circle" size={26} color="#000000" />
+              <Ionicons name="add-circle" size={28} color="#000000" />
             </TouchableOpacity>
+          </View>
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>¥{item.discounted_price.toFixed(2)}</Text>
+            <Text style={styles.unit}>/{item.unit}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -331,10 +333,8 @@ export default function HomeScreen() {
                     data={products}
                     renderItem={renderProductItem}
                     keyExtractor={item => item.id}
-                    numColumns={2}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.productsGrid}
-                    columnWrapperStyle={styles.productRow}
+                    contentContainerStyle={styles.productsList}
                     refreshControl={
                       <RefreshControl
                         refreshing={isRefreshing}
@@ -438,14 +438,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F8',
   },
-  productsGrid: {
+  productsList: {
     padding: 12,
   },
-  productRow: {
-    justifyContent: 'space-between',
-  },
   productCard: {
-    width: '48.5%',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginBottom: 12,
@@ -458,35 +454,45 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    aspectRatio: 1,
+    aspectRatio: 16/9,
     backgroundColor: '#F5F5F5',
   },
   productInfo: {
     padding: 12,
   },
+  productHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  productTitleContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
   productName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
     color: '#000000',
     marginBottom: 4,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   productOrigin: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666666',
     marginBottom: 8,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    marginTop: 8,
   },
   price: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#000000',
   },
   unit: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666666',
     marginLeft: 2,
   },
@@ -514,12 +520,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
-  },
-  productBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
   },
   addToCartButton: {
     padding: 4,
