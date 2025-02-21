@@ -5,7 +5,7 @@
  * Form fields match the products table schema.
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -35,6 +35,11 @@ export const unstable_settings = {
 const UNITS = ['lb', 'kg', 'g', '500g', 'piece', 'box'] as const;
 type UnitType = typeof UNITS[number];
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface FormErrors {
   name?: string;
   origin?: string;
@@ -54,8 +59,8 @@ export default function NewProductScreen() {
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [category, setCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,16 +73,12 @@ export default function NewProductScreen() {
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('products')
-        .select('category')
-        .not('category', 'eq', '')
-        .order('category');
+        .from('categories')
+        .select('id, name')
+        .order('name');
 
       if (error) throw error;
-
-      // 获取唯一的分类列表
-      const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
-      setCategories(uniqueCategories);
+      setCategories(data);
     } catch (error) {
       Alert.alert('错误', '获取分类列表失败');
     } finally {
@@ -90,27 +91,45 @@ export default function NewProductScreen() {
     setShowUnitModal(false);
   };
 
-  const selectCategory = (selectedCategory: string) => {
-    if (selectedCategory === 'new') {
+  const selectCategory = (category: Category | 'new') => {
+    if (category === 'new') {
       setShowNewCategoryInput(true);
     } else {
-      setCategory(selectedCategory);
+      setSelectedCategory(category);
       setShowCategoryModal(false);
       setShowNewCategoryInput(false);
       setErrors({ ...errors, category: undefined });
     }
   };
 
-  const handleNewCategory = () => {
-    if (!newCategory.trim()) {
-      return;
+  const handleNewCategory = async () => {
+    if (!newCategory.trim()) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          name: newCategory.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newCategoryObj = {
+        id: data.id,
+        name: data.name,
+      };
+
+      setCategories([...categories, newCategoryObj]);
+      setSelectedCategory(newCategoryObj);
+      setNewCategory('');
+      setShowNewCategoryInput(false);
+      setShowCategoryModal(false);
+      setErrors({ ...errors, category: undefined });
+    } catch (error) {
+      Alert.alert('错误', '创建新分类失败');
     }
-    setCategory(newCategory.trim());
-    setCategories([...categories, newCategory.trim()]);
-    setNewCategory('');
-    setShowNewCategoryInput(false);
-    setShowCategoryModal(false);
-    setErrors({ ...errors, category: undefined });
   };
 
   const pickImage = async () => {
@@ -133,13 +152,8 @@ export default function NewProductScreen() {
 
   const uploadImage = async (uri: string): Promise<string> => {
     try {
-      // 获取文件扩展名
       const ext = uri.substring(uri.lastIndexOf('.') + 1);
-      
-      // 创建唯一的文件名
       const fileName = `${Date.now()}.${ext}`;
-      
-      // 获取图片的base64数据
       const response = await fetch(uri);
       const blob = await response.blob();
       const reader = new FileReader();
@@ -185,8 +199,8 @@ export default function NewProductScreen() {
       newErrors.origin = '请输入产地';
     }
 
-    if (!category.trim()) {
-      newErrors.category = '请选择或输入分类';
+    if (!selectedCategory) {
+      newErrors.category = '请选择商品分类';
     }
 
     const priceNum = parseFloat(price);
@@ -212,33 +226,32 @@ export default function NewProductScreen() {
     try {
       setIsSubmitting(true);
 
-      // 获取当前登录用户
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
         throw new Error('未登录或会话已过期');
       }
 
-      // 如果有选择图片，先上传图片
       let imageUrl = null;
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
       }
 
-      // 创建新商品
+      const priceValue = parseFloat(price);
       const { error: insertError } = await supabase
         .from('products')
         .insert({
           name: name.trim(),
           origin: origin.trim(),
           unit,
-          price: parseFloat(price),
+          price: priceValue,
+          discounted_price: priceValue, // 初始折扣价等于原价
           stock: parseInt(stock),
           description: description.trim() || null,
           image_url: imageUrl,
           supplier_id: user.id,
           is_active: true,
-          category: category.trim(),
+          category: selectedCategory?.name, // 使用分类名称
         });
 
       if (insertError) {
@@ -344,9 +357,9 @@ export default function NewProductScreen() {
                 >
                   <Text style={[
                     styles.categoryText,
-                    !category && styles.placeholderText
+                    !selectedCategory && styles.placeholderText
                   ]}>
-                    {category || '请选择商品分类'}
+                    {selectedCategory?.name || '请选择商品分类'}
                   </Text>
                 </TouchableOpacity>
                 {renderError(errors.category)}
@@ -497,24 +510,24 @@ export default function NewProductScreen() {
               
               {isLoadingCategories ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={Colors.light.tint} />
+                  <ActivityIndicator size="large" color="#000" />
                 </View>
               ) : (
                 <View style={styles.categoryList}>
                   {categories.map((cat) => (
                     <TouchableOpacity
-                      key={cat}
+                      key={cat.id}
                       style={[
                         styles.categoryOption,
-                        category === cat && styles.categoryOptionSelected
+                        selectedCategory?.id === cat.id && styles.categoryOptionSelected
                       ]}
                       onPress={() => selectCategory(cat)}
                     >
                       <Text style={[
                         styles.categoryOptionText,
-                        category === cat && styles.categoryOptionTextSelected
+                        selectedCategory?.id === cat.id && styles.categoryOptionTextSelected
                       ]}>
-                        {cat}
+                        {cat.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -533,7 +546,7 @@ export default function NewProductScreen() {
                         value={newCategory}
                         onChangeText={setNewCategory}
                         placeholder="请输入新分类名称"
-                        placeholderTextColor={Colors.light.icon}
+                        placeholderTextColor="#666"
                         autoFocus
                       />
                       <TouchableOpacity
@@ -561,7 +574,7 @@ export default function NewProductScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#FFFFFF',
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -577,49 +590,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: Colors.light.background,
-    zIndex: 1,
+    borderBottomColor: '#E5E5E5',
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     marginRight: 16,
   },
   backButtonText: {
-    color: Colors.light.tint,
+    color: '#000000',
     fontSize: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: '#000000',
   },
   form: {
     padding: 16,
-    paddingBottom: 32,
   },
   formGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#000000',
     marginBottom: 8,
     fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E5E5E5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#F9FAFB',
-    color: Colors.light.text,
+    backgroundColor: '#FFFFFF',
+    color: '#000000',
   },
   inputError: {
-    borderColor: '#EF4444',
+    borderColor: '#FF3B30',
   },
   errorText: {
-    color: '#EF4444',
+    color: '#FF3B30',
     fontSize: 14,
     marginTop: 4,
   },
@@ -631,7 +642,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E5E5E5',
     borderRadius: 8,
     overflow: 'hidden',
   },
@@ -644,49 +655,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
   },
   uploadText: {
-    color: Colors.light.icon,
+    color: '#666666',
     fontSize: 16,
   },
   submitButtonContainer: {
     padding: 16,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#E5E5E5',
   },
   submitButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#000000',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.5,
   },
   submitButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  unitSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-  },
-  unitText: {
-    fontSize: 16,
-    color: Colors.light.text,
-  },
-  unitSelectorIcon: {
-    fontSize: 12,
-    color: Colors.light.icon,
   },
   modalOverlay: {
     flex: 1,
@@ -694,10 +687,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    paddingBottom: 30,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -705,19 +698,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#E5E5E5',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: '#000000',
   },
   modalCloseButton: {
     padding: 4,
   },
   modalCloseText: {
     fontSize: 20,
-    color: Colors.light.icon,
+    color: '#000000',
   },
   unitList: {
     padding: 16,
@@ -726,26 +719,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F8F8F8',
   },
   unitOptionSelected: {
-    backgroundColor: Colors.light.tint + '15',
+    backgroundColor: '#000000',
   },
   unitOptionText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#000000',
     textAlign: 'center',
   },
   unitOptionTextSelected: {
-    color: Colors.light.tint,
-    fontWeight: '600',
+    color: '#FFFFFF',
   },
   categoryText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#000000',
   },
   placeholderText: {
-    color: Colors.light.icon,
+    color: '#666666',
   },
   loadingContainer: {
     padding: 20,
@@ -758,32 +750,31 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F8F8F8',
   },
   categoryOptionSelected: {
-    backgroundColor: Colors.light.tint + '15',
+    backgroundColor: '#000000',
   },
   categoryOptionText: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#000000',
     textAlign: 'center',
   },
   categoryOptionTextSelected: {
-    color: Colors.light.tint,
-    fontWeight: '600',
+    color: '#FFFFFF',
   },
   newCategoryButton: {
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: Colors.light.tint + '15',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.light.tint,
+    borderColor: '#000000',
     borderStyle: 'dashed',
   },
   newCategoryButtonText: {
     fontSize: 16,
-    color: Colors.light.tint,
+    color: '#000000',
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -795,27 +786,45 @@ const styles = StyleSheet.create({
   newCategoryInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E5E5E5',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#F9FAFB',
-    color: Colors.light.text,
+    backgroundColor: '#FFFFFF',
+    color: '#000000',
     marginRight: 8,
   },
   newCategorySubmitButton: {
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#000000',
     padding: 12,
     borderRadius: 8,
     minWidth: 60,
     alignItems: 'center',
   },
   newCategorySubmitButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.5,
   },
   newCategorySubmitButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  unitSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  unitText: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  unitSelectorIcon: {
+    fontSize: 12,
+    color: '#666666',
   },
 });
