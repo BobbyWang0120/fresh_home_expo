@@ -21,7 +21,6 @@ import {
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { Session } from '@supabase/supabase-js';
-import { Colors } from '../../constants/Colors';
 import { router } from 'expo-router';
 
 // Define the Profile type
@@ -119,7 +118,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.light.tint} />
+          <ActivityIndicator size="large" color="#000000" />
         </View>
       </SafeAreaView>
     );
@@ -142,7 +141,7 @@ export default function ProfileScreen() {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholderTextColor={Colors.light.icon}
+              placeholderTextColor="#666666"
             />
             
             <TextInput
@@ -151,7 +150,7 @@ export default function ProfileScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholderTextColor={Colors.light.icon}
+              placeholderTextColor="#666666"
             />
             
             <TouchableOpacity 
@@ -180,54 +179,60 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={styles.title}>个人中心</Text>
           <View style={styles.decorativeLine} />
         </View>
 
         <View style={styles.profileContainer}>
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>邮箱</Text>
-            <Text style={styles.value}>{session.user.email}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>角色</Text>
-            <Text style={styles.value}>
-              {profile?.role === 'supplier' ? '供应商' : '用户'}
-            </Text>
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>基本信息</Text>
+            <View style={styles.infoItem}>
+              <Text style={styles.label}>邮箱</Text>
+              <Text style={styles.value}>{session.user.email}</Text>
+            </View>
+            
+            <View style={styles.infoItem}>
+              <Text style={styles.label}>角色</Text>
+              <Text style={styles.value}>
+                {profile?.role === 'supplier' ? '供应商' : '用户'}
+              </Text>
+            </View>
+
+            <View style={styles.infoItem}>
+              <Text style={styles.label}>用户 ID</Text>
+              <Text style={styles.value}>{session.user.id}</Text>
+            </View>
+            
+            <View style={styles.infoItem}>
+              <Text style={styles.label}>最近登录</Text>
+              <Text style={styles.value}>
+                {new Date(session.user.last_sign_in_at || '').toLocaleString()}
+              </Text>
+            </View>
           </View>
 
           {profile?.role === 'supplier' && (
-            <TouchableOpacity 
-              style={styles.actionLink}
-              onPress={() => router.push('/product/new')}
-            >
-              <Text style={styles.actionLinkText}>添加新商品</Text>
-            </TouchableOpacity>
+            <View style={styles.actionSection}>
+              <Text style={styles.sectionTitle}>供应商功能</Text>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => router.push('/product/new')}
+              >
+                <Text style={styles.actionButtonText}>添加新商品</Text>
+              </TouchableOpacity>
+            </View>
           )}
-
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>用户 ID</Text>
-            <Text style={styles.value}>{session.user.id}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.label}>最近登录</Text>
-            <Text style={styles.value}>
-              {new Date(session.user.last_sign_in_at || '').toLocaleString()}
-            </Text>
-          </View>
         </View>
-        
+
         <TouchableOpacity 
           style={styles.signOutButton}
           onPress={handleSignOut}
         >
           <Text style={styles.buttonText}>退出登录</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -235,7 +240,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
@@ -244,53 +249,51 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
   },
   headerContainer: {
     alignItems: 'center',
-    marginVertical: 30,
+    marginVertical: 32,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: '#000000',
     marginBottom: 12,
     letterSpacing: -0.5,
   },
   decorativeLine: {
     width: 40,
     height: 2,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#000000',
     borderRadius: 1,
   },
   formContainer: {
-    width: '100%',
     paddingHorizontal: 20,
   },
   input: {
     width: '100%',
     height: 50,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E5E5E5',
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 15,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#000000',
   },
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: Colors.light.tint,
+    backgroundColor: '#000000',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -300,49 +303,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchText: {
-    color: Colors.light.tint,
+    color: '#000000',
     fontSize: 14,
     fontWeight: '500',
   },
   profileContainer: {
-    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 20,
+  },
+  infoSection: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  actionSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 16,
   },
   infoItem: {
     marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    color: Colors.light.icon,
+    color: '#666666',
     marginBottom: 4,
   },
   value: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#000000',
     fontWeight: '500',
   },
-  actionLink: {
-    backgroundColor: '#F3F4F6',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 10,
-  },
-  actionLinkText: {
-    color: Colors.light.tint,
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  signOutButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#EF4444',
+  actionButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#000000',
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 'auto',
-    marginBottom: 20,
+  },
+  actionButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  signOutButton: {
+    backgroundColor: '#000000',
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 32,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
   },
 });
