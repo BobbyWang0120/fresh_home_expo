@@ -1,42 +1,160 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  ScrollView, 
+  Image,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 
-// 模拟购物车数据
-const cartItems = [
-  {
-    id: '1',
-    name: '新鲜三文鱼',
-    price: 25.99,
-    quantity: 2,
-    unit: '磅',
-  },
-  {
-    id: '2',
-    name: '帝王蟹',
-    price: 45.99,
-    quantity: 1,
-    unit: '磅',
-  },
-  {
-    id: '3',
-    name: '新鲜虾仁',
-    price: 18.99,
-    quantity: 3,
-    unit: '磅',
-  },
-];
+// Types for the database response
+interface ProductImage {
+  storage_path: string;
+  is_primary: boolean;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  discounted_price: number;
+  unit: string;
+  product_images: ProductImage[];
+}
+
+interface CartItemResponse {
+  id: string;
+  quantity: number;
+  products: Product;
+}
+
+// Types for the component state
+interface CartItem {
+  id: string;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    discounted_price: number;
+    unit: string;
+    images: ProductImage[];
+  };
+}
 
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedItems, setSelectedItems] = useState<string[]>(cartItems.map(item => item.id));
-  const [quantities, setQuantities] = useState<Record<string, number>>(
-    Object.fromEntries(cartItems.map(item => [item.id, item.quantity]))
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  useEffect(() => {
+    loadCartItems();
+  }, []);
+
+  const loadCartItems = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('提示', '请先登录');
+        router.back();
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('cart_items')
+        .select(`
+          id,
+          quantity,
+          products!inner (
+            id,
+            name,
+            price,
+            discounted_price,
+            unit,
+            product_images (
+              storage_path,
+              is_primary
+            )
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Transform the data to match the CartItem interface
+      const transformedData: CartItem[] = (data || []).map(item => {
+        const rawItem = item as unknown as {
+          id: string;
+          quantity: number;
+          products: {
+            id: string;
+            name: string;
+            price: number;
+            discounted_price: number;
+            unit: string;
+            product_images: ProductImage[];
+          };
+        };
+
+        return {
+          id: rawItem.id,
+          quantity: rawItem.quantity,
+          product: {
+            id: rawItem.products.id,
+            name: rawItem.products.name,
+            price: rawItem.products.price,
+            discounted_price: rawItem.products.discounted_price,
+            unit: rawItem.products.unit,
+            images: rawItem.products.product_images || []
+          }
+        };
+      });
+
+      setCartItems(transformedData);
+      setSelectedItems(transformedData.map(item => item.id));
+    } catch (error) {
+      console.error('Error loading cart items:', error);
+      Alert.alert('错误', '加载购物车失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateQuantity = async (cartItemId: string, change: number) => {
+    try {
+      const item = cartItems.find(item => item.id === cartItemId);
+      if (!item) return;
+
+      const newQuantity = Math.max(1, item.quantity + change);
+      
+      const { error } = await supabase
+        .from('cart_items')
+        .update({ quantity: newQuantity })
+        .eq('id', cartItemId);
+
+      if (error) throw error;
+
+      setCartItems(prev => prev.map(item => 
+        item.id === cartItemId 
+          ? { ...item, quantity: newQuantity }
+          : item
+      ));
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      Alert.alert('错误', '更新数量失败');
+    }
+  };
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems(prev => 
@@ -54,19 +172,25 @@ export default function CartScreen() {
     );
   };
 
-  const updateQuantity = (id: string, change: number) => {
-    setQuantities(prev => ({
-      ...prev,
-      [id]: Math.max(1, (prev[id] || 1) + change),
-    }));
-  };
-
   const getTotalPrice = () => {
     return selectedItems.reduce((total, id) => {
       const item = cartItems.find(item => item.id === id);
-      return total + (item ? item.price * quantities[id] : 0);
+      return total + (item ? item.product.discounted_price * item.quantity : 0);
     }, 0);
   };
+
+  const handleCheckout = () => {
+    // TODO: Implement checkout logic
+    Alert.alert('提示', '结算功能开发中');
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#000000" />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -83,86 +207,102 @@ export default function CartScreen() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#333" />
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>购物车</Text>
         </View>
 
         {/* Cart Items */}
-        <ScrollView style={styles.cartContent}>
-          {cartItems.map(item => (
-            <View key={item.id} style={styles.cartItem}>
-              <TouchableOpacity
-                onPress={() => toggleSelectItem(item.id)}
-                style={styles.checkbox}
-              >
-                <Ionicons
-                  name={selectedItems.includes(item.id) ? "checkbox" : "square-outline"}
-                  size={24}
-                  color="#4CAF50"
-                />
-              </TouchableOpacity>
+        {cartItems.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="cart-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>购物车是空的</Text>
+          </View>
+        ) : (
+          <ScrollView style={styles.cartContent}>
+            {cartItems.map(item => {
+              const primaryImage = item.product.images?.find(img => img.is_primary);
               
-              <Image
-                source={{ uri: 'https://via.placeholder.com/100' }}
-                style={styles.productImage}
-              />
-              
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{item.name}</Text>
-                <Text style={styles.productPrice}>${item.price}/{item.unit}</Text>
-                
-                <View style={styles.quantityControl}>
-                  <TouchableOpacity 
-                    onPress={() => updateQuantity(item.id, -1)}
-                    style={styles.quantityButton}
+              return (
+                <View key={item.id} style={styles.cartItem}>
+                  <TouchableOpacity
+                    onPress={() => toggleSelectItem(item.id)}
+                    style={styles.checkbox}
                   >
-                    <Ionicons name="remove" size={20} color="#666" />
+                    <Ionicons
+                      name={selectedItems.includes(item.id) ? "checkbox" : "square-outline"}
+                      size={24}
+                      color="#000"
+                    />
                   </TouchableOpacity>
-                  <Text style={styles.quantityText}>{quantities[item.id]}</Text>
-                  <TouchableOpacity 
-                    onPress={() => updateQuantity(item.id, 1)}
-                    style={styles.quantityButton}
-                  >
-                    <Ionicons name="add" size={20} color="#666" />
-                  </TouchableOpacity>
+                  
+                  <Image
+                    source={{ uri: primaryImage?.storage_path }}
+                    style={styles.productImage}
+                  />
+                  
+                  <View style={styles.productInfo}>
+                    <Text style={styles.productName}>{item.product.name}</Text>
+                    <Text style={styles.productPrice}>
+                      ¥{item.product.discounted_price}/{item.product.unit}
+                    </Text>
+                    
+                    <View style={styles.quantityControl}>
+                      <TouchableOpacity 
+                        onPress={() => updateQuantity(item.id, -1)}
+                        style={styles.quantityButton}
+                      >
+                        <Ionicons name="remove" size={20} color="#000" />
+                      </TouchableOpacity>
+                      <Text style={styles.quantityText}>{item.quantity}</Text>
+                      <TouchableOpacity 
+                        onPress={() => updateQuantity(item.id, 1)}
+                        style={styles.quantityButton}
+                      >
+                        <Ionicons name="add" size={20} color="#000" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {/* Bottom Total Bar */}
-        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + 10, 20) }]}>
-          <TouchableOpacity 
-            style={styles.selectAllButton}
-            onPress={toggleSelectAll}
-          >
-            <Ionicons
-              name={selectedItems.length === cartItems.length ? "checkbox" : "square-outline"}
-              size={24}
-              color="#4CAF50"
-            />
-            <Text style={styles.selectAllText}>全选</Text>
-          </TouchableOpacity>
+        {cartItems.length > 0 && (
+          <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+            <TouchableOpacity 
+              style={styles.selectAllButton}
+              onPress={toggleSelectAll}
+            >
+              <Ionicons
+                name={selectedItems.length === cartItems.length ? "checkbox" : "square-outline"}
+                size={24}
+                color="#000"
+              />
+              <Text style={styles.selectAllText}>全选</Text>
+            </TouchableOpacity>
 
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>总计: </Text>
-            <Text style={styles.totalPrice}>${getTotalPrice().toFixed(2)}</Text>
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalLabel}>总计: </Text>
+              <Text style={styles.totalPrice}>¥{getTotalPrice().toFixed(2)}</Text>
+            </View>
+
+            <TouchableOpacity 
+              style={[
+                styles.checkoutButton,
+                selectedItems.length === 0 && styles.checkoutButtonDisabled
+              ]}
+              disabled={selectedItems.length === 0}
+              onPress={handleCheckout}
+            >
+              <Text style={styles.checkoutButtonText}>
+                结算 ({selectedItems.length})
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity 
-            style={[
-              styles.checkoutButton,
-              selectedItems.length === 0 && styles.checkoutButtonDisabled
-            ]}
-            disabled={selectedItems.length === 0}
-          >
-            <Text style={styles.checkoutButtonText}>
-              结算 ({selectedItems.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
     </>
   );
@@ -173,6 +313,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -180,7 +324,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
   backButton: {
     marginRight: 16,
@@ -188,7 +331,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#333',
+    color: '#000',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   cartContent: {
     flex: 1,
@@ -208,6 +361,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     marginRight: 15,
+    backgroundColor: '#f5f5f5',
   },
   productInfo: {
     flex: 1,
@@ -215,12 +369,12 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#000',
     marginBottom: 4,
   },
   productPrice: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#000',
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -239,7 +393,7 @@ const styles = StyleSheet.create({
   quantityText: {
     marginHorizontal: 15,
     fontSize: 16,
-    color: '#333',
+    color: '#000',
   },
   bottomBar: {
     flexDirection: 'row',
@@ -257,7 +411,7 @@ const styles = StyleSheet.create({
   selectAllText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#333',
+    color: '#000',
   },
   totalContainer: {
     flex: 1,
@@ -273,10 +427,10 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#000',
   },
   checkoutButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#000',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,

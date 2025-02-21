@@ -11,7 +11,8 @@ import {
   RefreshControl,
   FlatList,
   Platform,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
@@ -49,10 +50,12 @@ export default function HomeScreen() {
   const [isProductsLoading, setIsProductsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
 
   // 首次加载数据
   useEffect(() => {
     loadInitialData();
+    loadCartItemCount();
   }, []);
 
   // 监听分类变化加载商品
@@ -139,6 +142,75 @@ export default function HomeScreen() {
     loadProducts();
   };
 
+  // 加载购物车数量
+  const loadCartItemCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count, error } = await supabase
+        .from('cart_items')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setCartItemCount(count || 0);
+    } catch (error) {
+      console.error('Error loading cart count:', error);
+    }
+  };
+
+  // 添加到购物车
+  const addToCart = async (productId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('提示', '请先登录');
+        return;
+      }
+
+      // 检查购物车是否已有该商品
+      const { data: existingItem, error: checkError } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+      if (existingItem) {
+        // 更新数量
+        const { error: updateError } = await supabase
+          .from('cart_items')
+          .update({ quantity: existingItem.quantity + 1 })
+          .eq('id', existingItem.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // 新增商品
+        const { error: insertError } = await supabase
+          .from('cart_items')
+          .insert([
+            {
+              user_id: user.id,
+              product_id: productId,
+              quantity: 1
+            }
+          ]);
+
+        if (insertError) throw insertError;
+      }
+
+      // 刷新购物车数量
+      await loadCartItemCount();
+      Alert.alert('成功', '已添加到购物车');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      Alert.alert('错误', '添加到购物车失败');
+    }
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       <View style={styles.searchContainer}>
@@ -148,8 +220,18 @@ export default function HomeScreen() {
           isSearchMode={searchMode}
         />
       </View>
-      <TouchableOpacity style={styles.cartButton} onPress={() => {}}>
+      <TouchableOpacity 
+        style={styles.cartButton} 
+        onPress={() => router.push('/cart')}
+      >
         <Ionicons name="cart-outline" size={24} color="#000000" />
+        {cartItemCount > 0 && (
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>
+              {cartItemCount > 99 ? '99+' : cartItemCount}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -187,9 +269,20 @@ export default function HomeScreen() {
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
           <Text style={styles.productOrigin}>{item.origin}</Text>
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>¥{item.discounted_price.toFixed(2)}</Text>
-            <Text style={styles.unit}>/{item.unit}</Text>
+          <View style={styles.productBottom}>
+            <View style={styles.priceContainer}>
+              <Text style={styles.price}>¥{item.discounted_price.toFixed(2)}</Text>
+              <Text style={styles.unit}>/{item.unit}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.addToCartButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                addToCart(item.id);
+              }}
+            >
+              <Ionicons name="add-circle" size={26} color="#000000" />
+            </TouchableOpacity>
           </View>
         </View>
       </TouchableOpacity>
@@ -396,5 +489,31 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#666666',
+  },
+  cartBadge: {
+    position: 'absolute',
+    right: -6,
+    top: -6,
+    backgroundColor: '#000000',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  productBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  addToCartButton: {
+    padding: 4,
   },
 });
