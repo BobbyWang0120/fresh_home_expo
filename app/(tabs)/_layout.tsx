@@ -58,19 +58,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="categories"
-        options={{
-          title: '分类',
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons 
-              name={focused ? "grid" : "grid-outline"} 
-              size={size} 
-              color={focused ? activeColor : inactiveColor} 
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="orders"
         options={{
           title: '订单',
