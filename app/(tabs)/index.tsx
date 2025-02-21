@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { StyleSheet, SafeAreaView, TextInput, Keyboard } from 'react-native';
-import { CarouselBanner } from '@/components/home/CarouselBanner';
 import { CategorySection } from '@/components/home/CategorySection';
 import { PopularProducts } from '@/components/home/PopularProducts';
 import { OnSaleProducts } from '@/components/home/OnSaleProducts';
@@ -47,7 +46,6 @@ export default function HomeScreen() {
             contentContainerStyle={styles.scrollContent}
             onRefresh={handleRefresh}
           >
-            <CarouselBanner />
             <CategorySection />
             <OnSaleProducts />
             <PopularProducts />
