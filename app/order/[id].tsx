@@ -8,11 +8,14 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ProductImage {
   storage_path: string;
@@ -49,7 +52,7 @@ interface Address {
 interface Order {
   id: string;
   created_at: string;
-  order_status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  order_status: 'pending' | 'confirmed' | 'processing' | 'shipping' | 'delivered' | 'cancelled';
   payment_status: 'paid' | 'unpaid' | 'refunded';
   total: number;
   subtotal: number;
@@ -59,10 +62,18 @@ interface Order {
   items: OrderItem[];
 }
 
+interface Profile {
+  id: string;
+  role: 'user' | 'supplier';
+}
+
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     loadOrderDetail();
@@ -150,6 +161,11 @@ export default function OrderDetailScreen() {
         address: orderData.shipping_address,
         items: processedItems
       });
+
+      setUserProfile({
+        id: user.id,
+        role: profile.role
+      });
     } catch (error) {
       console.error('Error loading order detail:', error);
       Alert.alert('错误', '加载订单详情失败');
@@ -161,9 +177,11 @@ export default function OrderDetailScreen() {
   const getStatusText = (status: Order['order_status']) => {
     const statusMap = {
       pending: '待处理',
+      confirmed: '已确认',
       processing: '处理中',
-      shipped: '已发货',
-      delivered: '已送达'
+      shipping: '配送中',
+      delivered: '已送达',
+      cancelled: '已取消'
     };
     return statusMap[status] || status;
   };
@@ -180,12 +198,85 @@ export default function OrderDetailScreen() {
   const getStatusColor = (status: Order['order_status']) => {
     const colorMap = {
       pending: '#f97316',
-      processing: '#3b82f6',
-      shipped: '#8b5cf6',
-      delivered: '#22c55e'
+      confirmed: '#3b82f6',
+      processing: '#8b5cf6',
+      shipping: '#06b6d4',
+      delivered: '#22c55e',
+      cancelled: '#ef4444'
     };
     return colorMap[status] || '#000000';
   };
+
+  const handleUpdateStatus = async (newStatus: Order['order_status']) => {
+    try {
+      setUpdatingStatus(true);
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          order_status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setOrder(prev => prev ? { ...prev, order_status: newStatus } : null);
+      setShowStatusModal(false);
+      Alert.alert('成功', '订单状态已更新');
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      Alert.alert('错误', '更新订单状态失败');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const renderStatusModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showStatusModal}
+      onRequestClose={() => setShowStatusModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>更新订单状态</Text>
+          
+          <ScrollView style={styles.statusList}>
+            {['pending', 'confirmed', 'processing', 'shipping', 'delivered', 'cancelled'].map((status) => (
+              <TouchableOpacity
+                key={status}
+                style={[
+                  styles.statusOption,
+                  order?.order_status === status && styles.statusOptionSelected
+                ]}
+                onPress={() => handleUpdateStatus(status as Order['order_status'])}
+                disabled={updatingStatus}
+              >
+                <View style={[styles.statusDot, { backgroundColor: getStatusColor(status as Order['order_status']) }]} />
+                <Text style={[
+                  styles.statusOptionText,
+                  order?.order_status === status && styles.statusOptionTextSelected
+                ]}>
+                  {getStatusText(status as Order['order_status'])}
+                </Text>
+                {order?.order_status === status && (
+                  <Ionicons name="checkmark" size={20} color="#000" style={styles.statusCheckmark} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowStatusModal(false)}
+          >
+            <Text style={styles.closeButtonText}>关闭</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (loading) {
     return (
@@ -215,9 +306,19 @@ export default function OrderDetailScreen() {
         {/* 订单状态卡片 */}
         <View style={styles.card}>
           <View style={styles.statusContainer}>
-            <Text style={[styles.statusText, { color: getStatusColor(order.order_status) }]}>
-              {getStatusText(order.order_status)}
-            </Text>
+            <View style={styles.statusHeader}>
+              <Text style={[styles.statusText, { color: getStatusColor(order.order_status) }]}>
+                {getStatusText(order.order_status)}
+              </Text>
+              {userProfile?.role === 'supplier' && (
+                <TouchableOpacity
+                  style={styles.updateStatusButton}
+                  onPress={() => setShowStatusModal(true)}
+                >
+                  <Text style={styles.updateStatusButtonText}>更新状态</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <Text style={styles.dateText}>
               {format(new Date(order.created_at), 'yyyy年MM月dd日 HH:mm', { locale: zhCN })}
             </Text>
@@ -294,6 +395,7 @@ export default function OrderDetailScreen() {
           </View>
         )}
       </ScrollView>
+      {renderStatusModal()}
     </SafeAreaView>
   );
 }
@@ -338,6 +440,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   statusText: {
     fontSize: 20,
@@ -433,5 +539,79 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     lineHeight: 20,
+  },
+  updateStatusButton: {
+    marginLeft: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+  },
+  updateStatusButtonText: {
+    fontSize: 14,
+    color: '#374151',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  statusList: {
+    maxHeight: 400,
+  },
+  statusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  statusOptionSelected: {
+    backgroundColor: '#f3f4f6',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  statusOptionText: {
+    fontSize: 16,
+    color: '#374151',
+    flex: 1,
+  },
+  statusOptionTextSelected: {
+    fontWeight: '600',
+    color: '#000000',
+  },
+  statusCheckmark: {
+    marginLeft: 8,
+  },
+  closeButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
   },
 }); 
