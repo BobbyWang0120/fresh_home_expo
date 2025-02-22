@@ -1,219 +1,192 @@
-import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
-import { orders, Order, OrderStatus } from '../../data/orders';
+import React, { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+} from 'react-native';
+import { supabase } from '@/lib/supabase';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-const ORDER_TABS = [
-  { id: 'all', name: '全部' },
-  { id: 'pending_payment', name: '待付款' },
-  { id: 'pending_delivery', name: '待发货' },
-  { id: 'delivering', name: '配送中' },
-  { id: 'completed', name: '已完成' },
-];
-
-const getStatusColor = (status: OrderStatus) => {
-  switch (status) {
-    case 'pending_payment':
-      return '#ff9800';
-    case 'pending_delivery':
-      return '#2196f3';
-    case 'delivering':
-      return '#9c27b0';
-    case 'completed':
-      return '#4caf50';
-    default:
-      return '#666';
-  }
-};
-
-const getStatusText = (status: OrderStatus) => {
-  switch (status) {
-    case 'pending_payment':
-      return '待付款';
-    case 'pending_delivery':
-      return '待发货';
-    case 'delivering':
-      return '配送中';
-    case 'completed':
-      return '已完成';
-    default:
-      return status;
-  }
-};
+interface Order {
+  id: string;
+  created_at: string;
+  order_status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  payment_status: 'paid' | 'unpaid' | 'refunded';
+  total: number;
+  subtotal: number;
+  shipping_fee: number;
+  notes?: string;
+}
 
 export default function OrdersScreen() {
-  const insets = useSafeAreaInsets();
-  const [selectedTab, setSelectedTab] = useState('all');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    // 模拟刷新操作
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setRefreshing(false);
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        Alert.alert('提示', '请先登录');
+        router.push('/(tabs)/profile');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      Alert.alert('错误', '加载订单失败');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  const filteredOrders = useCallback(() => {
-    if (selectedTab === 'all') {
-      return orders;
-    }
-    return orders.filter(order => order.status === selectedTab);
-  }, [selectedTab]);
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadOrders();
+  };
+
+  const getStatusText = (status: Order['order_status']) => {
+    const statusMap = {
+      pending: '待处理',
+      processing: '处理中',
+      shipped: '已发货',
+      delivered: '已送达'
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: Order['order_status']) => {
+    const colorMap = {
+      pending: '#F59E0B',
+      processing: '#3B82F6',
+      shipped: '#10B981',
+      delivered: '#6B7280'
+    };
+    return colorMap[status] || '#000000';
+  };
 
   const renderOrderItem = ({ item }: { item: Order }) => (
-    <View style={styles.orderCard}>
+    <TouchableOpacity
+      style={styles.orderCard}
+      onPress={() => router.push(`/order/${item.id}`)}
+    >
       <View style={styles.orderHeader}>
-        <Text style={styles.orderNumber}>订单 #{item.orderNumber}</Text>
-        <Text style={[styles.orderStatus, { color: getStatusColor(item.status) }]}>
-          {getStatusText(item.status)}
+        <Text style={styles.orderDate}>
+          {new Date(item.created_at).toLocaleDateString()}
         </Text>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.order_status) }]}>
+          <Text style={styles.statusText}>{getStatusText(item.order_status)}</Text>
+        </View>
       </View>
-      <View style={styles.orderBody}>
-        <Text style={styles.orderAmount}>总计: ${item.totalAmount.toFixed(2)}</Text>
-        <Text style={styles.orderDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+
+      <View style={styles.orderDetails}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>订单金额</Text>
+          <Text style={styles.detailValue}>¥{item.total.toFixed(2)}</Text>
+        </View>
+        
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>商品小计</Text>
+          <Text style={styles.detailValue}>¥{item.subtotal.toFixed(2)}</Text>
+        </View>
+        
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>运费</Text>
+          <Text style={styles.detailValue}>¥{item.shipping_fee.toFixed(2)}</Text>
+        </View>
       </View>
-      <View style={styles.orderActions}>
-        {item.status === 'pending_payment' && (
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>立即付款</Text>
-          </TouchableOpacity>
-        )}
-        {item.status === 'delivering' && (
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>追踪订单</Text>
-          </TouchableOpacity>
-        )}
+
+      <View style={styles.orderFooter}>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#000000" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>订单</Text>
-        </View>
-
-        {/* Order Status Tabs */}
-        <View style={styles.tabsWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tabsContainer}
-            contentContainerStyle={styles.tabsContent}
-          >
-            {ORDER_TABS.map((tab) => (
-              <TouchableOpacity
-                key={tab.id}
-                style={[
-                  styles.tabButton,
-                  selectedTab === tab.id && styles.tabButtonActive
-                ]}
-                onPress={() => setSelectedTab(tab.id)}
-              >
-                <Text style={[
-                  styles.tabName,
-                  selectedTab === tab.id && styles.tabNameActive
-                ]}>{tab.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Orders List */}
-        <FlatList
-          data={filteredOrders()}
-          renderItem={renderOrderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.ordersList}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor="#666"
-              colors={['#666']}
-            />
-          }
-        />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>我的订单</Text>
       </View>
-    </>
+
+      <FlatList
+        data={orders}
+        renderItem={renderOrderItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>暂无订单</Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#333',
+    color: '#000000',
   },
-  tabsWrapper: {
-    height: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  tabsContainer: {
-    height: '100%',
-  },
-  tabsContent: {
-    paddingHorizontal: 20,
-    height: '100%',
-  },
-  tabButton: {
-    height: '100%',
-    paddingHorizontal: 16,
-    marginRight: 15,
-    justifyContent: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabButtonActive: {
-    borderBottomColor: '#4CAF50',
-  },
-  tabName: {
-    fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
-  },
-  tabNameActive: {
-    color: '#4CAF50',
-  },
-  ordersList: {
+  listContainer: {
     padding: 16,
   },
   orderCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: '#E5E5E5',
   },
   orderHeader: {
     flexDirection: 'row',
@@ -221,43 +194,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  orderNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  orderStatus: {
+  orderDate: {
     fontSize: 14,
+    color: '#666666',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '500',
   },
-  orderBody: {
+  orderDetails: {
+    marginBottom: 12,
+  },
+  detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  orderAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  orderDate: {
+  detailLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#666666',
   },
-  orderActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  actionButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  actionButtonText: {
-    color: '#fff',
+  detailValue: {
     fontSize: 14,
+    color: '#000000',
     fontWeight: '500',
+  },
+  orderFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 12,
+    alignItems: 'flex-end',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666666',
   },
 });
