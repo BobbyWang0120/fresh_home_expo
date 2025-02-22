@@ -78,8 +78,17 @@ export default function OrderDetailScreen() {
         return;
       }
 
-      // 获取订单详情，包括地址信息
-      const { data: orderData, error: orderError } = await supabase
+      // 获取用户角色
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // 构建查询
+      let query = supabase
         .from('orders')
         .select(`
           *,
@@ -93,9 +102,14 @@ export default function OrderDetailScreen() {
             zip_code
           )
         `)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', id);
+
+      // 如果不是供应商，只能查看自己的订单
+      if (profile.role !== 'supplier') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: orderData, error: orderError } = await query.single();
 
       if (orderError) throw orderError;
 
