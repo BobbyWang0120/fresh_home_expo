@@ -14,6 +14,11 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
+interface ProductImage {
+  storage_path: string;
+  is_primary: boolean;
+}
+
 interface OrderItem {
   id: string;
   product_id: string;
@@ -24,6 +29,7 @@ interface OrderItem {
     name: string;
     unit: string;
     origin: string;
+    images: ProductImage[];
     primary_image?: {
       storage_path: string;
     };
@@ -99,11 +105,13 @@ export default function OrderDetailScreen() {
         .select(`
           *,
           product:products(
+            id,
             name,
             unit,
             origin,
-            primary_image:product_images(
-              storage_path
+            images:product_images(
+              storage_path,
+              is_primary
             )
           )
         `)
@@ -112,32 +120,21 @@ export default function OrderDetailScreen() {
 
       if (itemsError) throw itemsError;
 
-      // 处理商品主图
-      const itemsWithImages = await Promise.all(
-        orderItems.map(async (item) => {
-          if (item.product.primary_image?.[0]?.storage_path) {
-            const { data } = await supabase.storage
-              .from('product-images')
-              .getPublicUrl(item.product.primary_image[0].storage_path);
-            
-            return {
-              ...item,
-              product: {
-                ...item.product,
-                primary_image: {
-                  storage_path: data.publicUrl
-                }
-              }
-            };
+      // 处理商品数据，找出主图
+      const processedItems = orderItems.map(item => ({
+        ...item,
+        product: {
+          ...item.product,
+          primary_image: {
+            storage_path: item.product.images.find((img: ProductImage) => img.is_primary)?.storage_path || null
           }
-          return item;
-        })
-      );
+        }
+      }));
 
       setOrder({
         ...orderData,
         address: orderData.shipping_address,
-        items: itemsWithImages
+        items: processedItems
       });
     } catch (error) {
       console.error('Error loading order detail:', error);
