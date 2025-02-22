@@ -200,6 +200,7 @@ export default function CartScreen() {
         .from('addresses')
         .select('id')
         .eq('user_id', user.id)
+        .eq('is_default', true)
         .single();
 
       if (addressError) {
@@ -211,23 +212,23 @@ export default function CartScreen() {
       const shippingFee = 0; // 暂时设置运费为0
       const total = subtotal + shippingFee;
 
+      const now = new Date().toISOString();
+
       // 3. 创建订单
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .insert([
-          {
-            user_id: user.id,
-            address_id: addressData.id,
-            order_status: 'pending',  // 订单状态：pending(待处理)
-            payment_status: 'unpaid', // 支付状态：未支付
-            subtotal: subtotal,
-            shipping_fee: shippingFee,
-            total: total,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            notes: '' // 订单备注，可选
-          }
-        ])
+        .insert({
+          user_id: user.id,
+          address_id: addressData.id,
+          order_status: 'pending',  // 订单状态：pending(待处理)
+          payment_status: 'paid', // 支付状态：已支付
+          subtotal: subtotal,
+          shipping_fee: shippingFee,
+          total: total,
+          created_at: now,
+          updated_at: now,
+          notes: '' // 订单备注，可选
+        })
         .select()
         .single();
 
@@ -239,7 +240,9 @@ export default function CartScreen() {
         product_id: item.product.id,
         quantity: item.quantity,
         unit_price: item.product.discounted_price,
-        total_price: item.product.discounted_price * item.quantity,
+        discounted_price: item.product.discounted_price,
+        created_at: now,
+        updated_at: now
       }));
 
       const { error: orderItemsError } = await supabase
