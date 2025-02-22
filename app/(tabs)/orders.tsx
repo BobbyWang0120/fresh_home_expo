@@ -23,6 +23,13 @@ interface Order {
   subtotal: number;
   shipping_fee: number;
   notes?: string;
+  user_id: string;
+  user_email?: string;
+}
+
+interface Profile {
+  id: string;
+  role: 'user' | 'supplier';
 }
 
 export default function OrdersScreen() {
@@ -30,6 +37,7 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
 
   // 监听认证状态变化
   useEffect(() => {
@@ -38,9 +46,10 @@ export default function OrdersScreen() {
       if (userId !== currentUserId) {
         setCurrentUserId(userId);
         if (userId) {
-          loadOrders();
+          loadUserProfile(userId);
         } else {
           setOrders([]);
+          setUserProfile(null);
         }
       }
     });
@@ -60,9 +69,10 @@ export default function OrdersScreen() {
         if (userId !== currentUserId) {
           setCurrentUserId(userId);
           if (userId) {
-            loadOrders();
+            await loadUserProfile(userId);
           } else {
             setOrders([]);
+            setUserProfile(null);
           }
         }
       };
@@ -71,7 +81,24 @@ export default function OrdersScreen() {
     }, [currentUserId])
   );
 
-  const loadOrders = async () => {
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(profile);
+      loadOrders(profile.role);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      Alert.alert('错误', '加载用户信息失败');
+    }
+  };
+
+  const loadOrders = async (role: 'user' | 'supplier') => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -82,14 +109,51 @@ export default function OrdersScreen() {
         return;
       }
 
-      const { data, error } = await supabase
+      // 基本订单查询
+      let query = supabase
         .from('orders')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setOrders(data);
+      // 如果是普通用户，只显示自己的订单
+      if (role === 'user') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: ordersData, error: ordersError } = await query;
+
+      if (ordersError) throw ordersError;
+
+      // 如果是供应商，需要获取用户邮箱
+      if (role === 'supplier' && ordersData) {
+        // 获取所有订单相关的用户ID
+        const userIds = [...new Set(ordersData.map(order => order.user_id))];
+        
+        // 为每个用户ID获取邮箱
+        const emailPromises = userIds.map(async (userId) => {
+          const { data } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', userId)
+            .single();
+          return { userId, email: data?.email };
+        });
+
+        const userEmails = await Promise.all(emailPromises);
+        const userEmailMap = new Map(
+          userEmails.map(({ userId, email }) => [userId, email || '未知用户'])
+        );
+
+        // 将用户邮箱添加到订单数据中
+        const ordersWithUserInfo = ordersData.map(order => ({
+          ...order,
+          user_email: userEmailMap.get(order.user_id)
+        }));
+
+        setOrders(ordersWithUserInfo);
+      } else {
+        setOrders(ordersData);
+      }
     } catch (error) {
       console.error('Error loading orders:', error);
       Alert.alert('错误', '加载订单失败');
@@ -101,7 +165,9 @@ export default function OrdersScreen() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadOrders();
+    if (userProfile) {
+      loadOrders(userProfile.role);
+    }
   };
 
   const getStatusText = (status: Order['order_status']) => {
@@ -137,6 +203,12 @@ export default function OrdersScreen() {
           <Text style={styles.statusText}>{getStatusText(item.order_status)}</Text>
         </View>
       </View>
+
+      {userProfile?.role === 'supplier' && (
+        <View style={styles.userInfo}>
+          <Text style={styles.userEmail}>买家: {item.user_email || '未知用户'}</Text>
+        </View>
+      )}
 
       <View style={styles.orderDetails}>
         <View style={styles.detailRow}>
@@ -174,7 +246,9 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>我的订单</Text>
+        <Text style={styles.headerTitle}>
+          {userProfile?.role === 'supplier' ? '所有订单' : '我的订单'}
+        </Text>
       </View>
 
       <FlatList
@@ -245,6 +319,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '500',
+  },
+  userInfo: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666666',
   },
   orderDetails: {
     marginBottom: 12,
