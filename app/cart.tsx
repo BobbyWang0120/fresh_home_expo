@@ -179,9 +179,108 @@ export default function CartScreen() {
     }, 0);
   };
 
-  const handleCheckout = () => {
-    // TODO: Implement checkout logic
-    Alert.alert('提示', '结算功能开发中');
+  const handleCheckout = async () => {
+    try {
+      // 1. 获取用户信息
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('提示', '请先登录');
+        return;
+      }
+
+      // 2. 获取选中的购物车商品
+      const selectedCartItems = cartItems.filter(item => selectedItems.includes(item.id));
+      if (selectedCartItems.length === 0) {
+        Alert.alert('提示', '请选择要结算的商品');
+        return;
+      }
+
+      // TODO: 这里应该让用户选择收货地址，暂时使用默认地址
+      const { data: addressData, error: addressError } = await supabase
+        .from('addresses')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (addressError) {
+        Alert.alert('提示', '请先添加收货地址');
+        return;
+      }
+
+      const subtotal = getTotalPrice();
+      const shippingFee = 0; // 暂时设置运费为0
+      const total = subtotal + shippingFee;
+
+      // 3. 创建订单
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert([
+          {
+            user_id: user.id,
+            address_id: addressData.id,
+            order_status: 'pending',  // 订单状态：pending(待处理)
+            payment_status: 'unpaid', // 支付状态：未支付
+            subtotal: subtotal,
+            shipping_fee: shippingFee,
+            total: total,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            notes: '' // 订单备注，可选
+          }
+        ])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 4. 创建订单商品明细
+      const orderItems = selectedCartItems.map(item => ({
+        order_id: orderData.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: item.product.discounted_price,
+        total_price: item.product.discounted_price * item.quantity,
+      }));
+
+      const { error: orderItemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (orderItemsError) throw orderItemsError;
+
+      // 5. 删除已结算的购物车商品
+      const { error: deleteError } = await supabase
+        .from('cart_items')
+        .delete()
+        .in('id', selectedItems);
+
+      if (deleteError) throw deleteError;
+
+      // 6. 更新本地状态
+      setCartItems(prev => prev.filter(item => !selectedItems.includes(item.id)));
+      setSelectedItems([]);
+
+      // 7. 提示用户
+      Alert.alert(
+        '订单创建成功',
+        '您的订单已创建成功！',
+        [
+          {
+            text: '确定',
+            onPress: () => {
+              // 如果购物车已空，返回上一页
+              if (cartItems.length === selectedCartItems.length) {
+                router.back();
+              }
+            }
+          }
+        ]
+      );
+
+    } catch (error) {
+      console.error('Error creating order:', error);
+      Alert.alert('错误', '创建订单失败，请重试');
+    }
   };
 
   const deleteCartItem = async (cartItemId: string) => {
