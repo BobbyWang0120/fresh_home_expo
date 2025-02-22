@@ -12,6 +12,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Order {
   id: string;
@@ -28,10 +29,47 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // 监听认证状态变化
   useEffect(() => {
-    loadOrders();
-  }, []);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const userId = session?.user?.id || null;
+      if (userId !== currentUserId) {
+        setCurrentUserId(userId);
+        if (userId) {
+          loadOrders();
+        } else {
+          setOrders([]);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentUserId]);
+
+  // 页面获得焦点时检查并刷新数据
+  useFocusEffect(
+    React.useCallback(() => {
+      const checkAndLoadOrders = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id || null;
+        
+        if (userId !== currentUserId) {
+          setCurrentUserId(userId);
+          if (userId) {
+            loadOrders();
+          } else {
+            setOrders([]);
+          }
+        }
+      };
+
+      checkAndLoadOrders();
+    }, [currentUserId])
+  );
 
   const loadOrders = async () => {
     try {
@@ -39,7 +77,7 @@ export default function OrdersScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        Alert.alert('提示', '请先登录');
+        setOrders([]);
         router.push('/(tabs)/profile');
         return;
       }
