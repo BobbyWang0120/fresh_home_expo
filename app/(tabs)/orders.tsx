@@ -130,16 +130,23 @@ export default function OrdersScreen() {
         // 为每个用户ID获取邮箱
         const emailPromises = userIds.map(async (userId) => {
           const { data } = await supabase
-            .from('auth.users')
-            .select('email')
+            .from('profiles')
+            .select('email, display_name')
             .eq('id', userId)
             .single();
-          return { userId, email: data?.email };
+          return { 
+            userId, 
+            email: data?.email,
+            displayName: data?.display_name 
+          };
         });
 
         const userEmails = await Promise.all(emailPromises);
         const userEmailMap = new Map(
-          userEmails.map(({ userId, email }) => [userId, email || '未知用户'])
+          userEmails.map(({ userId, email, displayName }) => [
+            userId, 
+            displayName || email || '未知用户'
+          ])
         );
 
         // 将用户邮箱添加到订单数据中
