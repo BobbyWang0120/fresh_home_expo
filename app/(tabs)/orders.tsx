@@ -17,7 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 interface Order {
   id: string;
   created_at: string;
-  order_status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  order_status: 'pending' | 'confirmed' | 'processing' | 'shipping' | 'delivered' | 'cancelled';
   payment_status: 'paid' | 'unpaid' | 'refunded';
   total: number;
   subtotal: number;
@@ -66,19 +66,17 @@ export default function OrdersScreen() {
         const { data: { user } } = await supabase.auth.getUser();
         const userId = user?.id || null;
         
-        if (userId !== currentUserId) {
-          setCurrentUserId(userId);
-          if (userId) {
-            await loadUserProfile(userId);
-          } else {
-            setOrders([]);
-            setUserProfile(null);
-          }
+        if (userId) {
+          await loadUserProfile(userId);
+        } else {
+          setOrders([]);
+          setUserProfile(null);
+          router.push('/(tabs)/profile');
         }
       };
 
       checkAndLoadOrders();
-    }, [currentUserId])
+    }, [])  // Remove currentUserId dependency to ensure refresh on every focus
   );
 
   const loadUserProfile = async (userId: string) => {
@@ -132,7 +130,7 @@ export default function OrdersScreen() {
         // 为每个用户ID获取邮箱
         const emailPromises = userIds.map(async (userId) => {
           const { data } = await supabase
-            .from('users')
+            .from('profiles')
             .select('email')
             .eq('id', userId)
             .single();
@@ -173,19 +171,23 @@ export default function OrdersScreen() {
   const getStatusText = (status: Order['order_status']) => {
     const statusMap = {
       pending: '待处理',
+      confirmed: '已确认',
       processing: '处理中',
-      shipped: '已发货',
-      delivered: '已送达'
+      shipping: '配送中',
+      delivered: '已送达',
+      cancelled: '已取消'
     };
     return statusMap[status] || status;
   };
 
   const getStatusColor = (status: Order['order_status']) => {
     const colorMap = {
-      pending: '#F59E0B',
-      processing: '#3B82F6',
-      shipped: '#10B981',
-      delivered: '#6B7280'
+      pending: '#F59E0B',    // 橙色
+      confirmed: '#6366F1',  // 靛蓝色
+      processing: '#3B82F6', // 蓝色
+      shipping: '#8B5CF6',   // 紫色
+      delivered: '#10B981',  // 绿色
+      cancelled: '#EF4444'   // 红色
     };
     return colorMap[status] || '#000000';
   };
