@@ -130,7 +130,7 @@ export default function OrdersScreen() {
         // 为每个用户ID获取邮箱
         const emailPromises = userIds.map(async (userId) => {
           const { data } = await supabase
-            .from('profiles')
+            .from('auth.users')
             .select('email')
             .eq('id', userId)
             .single();
