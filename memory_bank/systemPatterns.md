@@ -84,4 +84,95 @@
    - Image optimization
    - Lazy loading
    - Caching strategies
-   - Bundle optimization 
+   - Bundle optimization
+
+## Order Management Patterns
+
+### Order Status Management
+1. Status Flow Pattern
+   ```
+   pending → confirmed → processing → shipping → delivered
+   (cancelled can be set from any status)
+   ```
+
+2. Status Update Pattern
+   - Role-based access control
+   - Real-time UI updates
+   - Database synchronization
+   - Audit trail maintenance
+
+3. Security Pattern
+   ```sql
+   -- RLS Policy Pattern for Suppliers
+   CREATE POLICY "Suppliers can update order status" ON public.orders
+   FOR UPDATE TO authenticated
+   USING (
+     EXISTS (
+       SELECT 1 FROM profiles
+       WHERE profiles.id = auth.uid()
+       AND profiles.role = 'supplier'
+     )
+   )
+   ```
+
+### UI Patterns
+
+1. Status Display Pattern
+   - Color coding for different statuses
+   - Clear status labels
+   - Visual status transitions
+   - Loading states during updates
+
+2. Modal Pattern for Updates
+   - Bottom sheet modal for mobile
+   - Status selection list
+   - Current status indication
+   - Confirmation before update
+
+3. Error Handling Pattern
+   - User-friendly error messages
+   - Fallback UI states
+   - Recovery options
+   - Transaction rollback
+
+### Data Update Patterns
+
+1. Optimistic Updates
+   - Update UI immediately
+   - Confirm with backend
+   - Rollback on failure
+   - Show error feedback
+
+2. Status Change Validation
+   - Role verification
+   - Status transition rules
+   - Data integrity checks
+   - Timestamp updates
+
+### Security Patterns
+
+1. Role-Based Access
+   - Supplier-specific actions
+   - User-specific views
+   - Action authorization
+   - Data access control
+
+2. Database Policies
+   - Table-level security
+   - Row-level security
+   - Operation-specific policies
+   - Role-based permissions
+
+### State Management Patterns
+
+1. Order State
+   - Current status
+   - Update history
+   - User permissions
+   - Related metadata
+
+2. UI State
+   - Loading states
+   - Error states
+   - Success feedback
+   - Modal states 

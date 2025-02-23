@@ -79,3 +79,77 @@ Fresh Home is a modern e-commerce platform designed to connect local suppliers w
    - Add delivery optimization
    - Implement loyalty program
    - Add social features 
+
+## Order Management Features
+
+### Order Status Workflow
+1. Status Progression
+   - pending: Initial state when order is created
+   - confirmed: Order verified by supplier
+   - processing: Order is being prepared
+   - shipping: Order is out for delivery
+   - delivered: Order successfully delivered
+   - cancelled: Order cancelled (can be set from any state)
+
+2. Business Rules
+   - Only suppliers can update order status
+   - Status changes must follow logical progression
+   - All status changes are logged with timestamps
+   - Users can view their order status in real-time
+
+### User Roles and Permissions
+1. Suppliers
+   - Can view all orders
+   - Can update order status
+   - Can see customer information
+   - Can manage multiple orders
+
+2. Customers
+   - Can view their own orders
+   - Can track order status
+   - Receive status updates
+   - Can view order history
+
+### Order Management Interface
+1. Supplier View
+   - List of all orders
+   - Status update capabilities
+   - Order details view
+   - Customer information
+
+2. Customer View
+   - Personal order list
+   - Order status tracking
+   - Order details view
+   - Order history
+
+### Business Value
+1. For Suppliers
+   - Efficient order processing
+   - Clear status management
+   - Customer communication
+   - Order tracking
+
+2. For Customers
+   - Order transparency
+   - Status visibility
+   - Delivery tracking
+   - Order history
+
+### Future Enhancements
+1. Notifications
+   - Status change alerts
+   - Delivery updates
+   - Order confirmations
+
+2. Analytics
+   - Order processing times
+   - Status transition metrics
+   - Supplier performance
+   - Customer satisfaction
+
+3. Advanced Features
+   - Bulk status updates
+   - Automated status changes
+   - Integration with delivery services
+   - Customer feedback system 

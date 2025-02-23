@@ -112,4 +112,157 @@
 3. **Production**
    - App Store deployment
    - Play Store deployment
-   - Supabase cloud hosting 
+   - Supabase cloud hosting
+
+## Order Management Technical Implementation
+
+### Database Schema
+```sql
+-- Orders Table Structure
+CREATE TABLE orders (
+  id uuid PRIMARY KEY,
+  user_id uuid REFERENCES auth.users NOT NULL,
+  address_id uuid REFERENCES addresses NOT NULL,
+  order_status order_status NOT NULL,
+  payment_status payment_status NOT NULL,
+  subtotal numeric NOT NULL,
+  shipping_fee numeric NOT NULL,
+  total numeric NOT NULL,
+  created_at timestamptz NOT NULL,
+  updated_at timestamptz NOT NULL,
+  notes text
+);
+
+-- RLS Policies
+CREATE POLICY "Suppliers can view all orders" ON orders
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role = 'supplier'
+  ));
+
+CREATE POLICY "Users can view their own orders" ON orders
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can create their own orders" ON orders
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Suppliers can update order status" ON orders
+  FOR UPDATE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role = 'supplier'
+  ));
+```
+
+### Status Management Implementation
+```typescript
+// Order Status Types
+type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipping' | 'delivered' | 'cancelled';
+
+// Status Update Function
+const handleUpdateStatus = async (newStatus: OrderStatus) => {
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .update({ 
+        order_status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+    
+    if (error) throw error;
+    // Update UI and show success message
+  } catch (error) {
+    // Handle error and show error message
+  }
+};
+```
+
+### UI Components
+1. Status Modal
+   ```typescript
+   const StatusModal = ({
+     visible,
+     currentStatus,
+     onStatusSelect,
+     onClose
+   }) => {
+     // Implementation details
+   };
+   ```
+
+2. Status Display
+   ```typescript
+   const StatusBadge = ({
+     status,
+     size = 'medium'
+   }) => {
+     // Implementation details
+   };
+   ```
+
+### Security Implementation
+1. Role-Based Access Control
+   ```typescript
+   const checkSupplierAccess = async () => {
+     const { data: profile } = await supabase
+       .from('profiles')
+       .select('role')
+       .eq('id', userId)
+       .single();
+     
+     return profile?.role === 'supplier';
+   };
+   ```
+
+2. Data Access Control
+   ```typescript
+   // RLS policies ensure data security at database level
+   // UI components respect user roles
+   // All operations verify permissions
+   ```
+
+### State Management
+1. Order State
+   ```typescript
+   interface OrderState {
+     id: string;
+     status: OrderStatus;
+     updatedAt: string;
+     // other fields
+   }
+   ```
+
+2. UI State
+   ```typescript
+   interface UIState {
+     isLoading: boolean;
+     isModalVisible: boolean;
+     error: Error | null;
+     // other fields
+   }
+   ```
+
+### Error Handling
+```typescript
+const handleError = (error: Error) => {
+  console.error('Error:', error);
+  Alert.alert('错误', '操作失败，请重试');
+};
+```
+
+### Performance Considerations
+1. Optimistic Updates
+   - Update UI immediately
+   - Revert on error
+   - Show loading states
+
+2. Data Fetching
+   - Efficient queries
+   - Proper indexing
+   - Caching strategy 
