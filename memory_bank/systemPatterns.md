@@ -7,7 +7,7 @@
    - `product_images`: Product image management
    - `orders`: Order tracking
    - `order_items`: Order line items
-   - `profiles`: User profiles
+   - `profiles`: User profiles with synced auth data
    - `addresses`: Delivery addresses
 
 2. **Key Relationships**
@@ -15,23 +15,27 @@
    - Products have multiple images
    - Orders belong to users
    - Order items belong to orders and products
+   - Profiles link to auth.users with synced data
 
 ## Frontend Architecture
 1. **Navigation**
    - Tab-based main navigation
    - Stack navigation for detailed views
    - Modal presentations for forms
+   - Screen refresh using useFocusEffect
 
 2. **Component Structure**
    - Atomic design pattern
    - Reusable UI components
    - Screen-specific components
    - Form components with validation
+   - Product list components for management
 
 3. **State Management**
    - Local component state for UI
    - Context for global state
    - Supabase real-time subscriptions
+   - Auto-refresh patterns for consistency
 
 ## Design Patterns
 1. **UI/UX Patterns**
@@ -40,6 +44,7 @@
    - Form validation patterns
    - Loading states and error handling
    - Image upload and preview
+   - Card-based list views
 
 2. **Code Organization**
    - Feature-based directory structure
@@ -53,6 +58,7 @@
    - Props drilling minimization
    - Event-based communication
    - API abstraction layer
+   - Auto-refresh on navigation focus
 
 ## Security Patterns
 1. **Authentication**
@@ -66,6 +72,7 @@
    - Role-based permissions
    - Data validation
    - Input sanitization
+   - Data synchronization triggers
 
 ## Development Patterns
 1. **Code Quality**
@@ -85,6 +92,7 @@
    - Lazy loading
    - Caching strategies
    - Bundle optimization
+   - Efficient data fetching
 
 ## Order Management Patterns
 
@@ -100,6 +108,7 @@
    - Real-time UI updates
    - Database synchronization
    - Audit trail maintenance
+   - Screen refresh on navigation
 
 3. Security Pattern
    ```sql
@@ -149,6 +158,12 @@
    - Data integrity checks
    - Timestamp updates
 
+3. Data Synchronization Pattern
+   - Database triggers for consistency
+   - Automatic field updates
+   - Cross-table data synchronization
+   - Default value handling
+
 ### Security Patterns
 
 1. Role-Based Access
@@ -175,4 +190,64 @@
    - Loading states
    - Error states
    - Success feedback
-   - Modal states 
+   - Modal states
+
+## Product Management Patterns
+
+### Product List Pattern
+1. List View Structure
+   - Card-based product display
+   - Image with product details
+   - Action buttons for each product
+   - Pull-to-refresh functionality
+
+2. Navigation Pattern
+   - Profile page entry point
+   - Stack navigation to product list
+   - Further navigation to edit pages
+   - Back navigation with auto-refresh
+
+3. Data Loading Pattern
+   - Initial load on component mount
+   - Pull-to-refresh for manual updates
+   - Loading indicators during data fetch
+   - Empty state handling
+
+### Product Display Pattern
+1. Card Layout
+   - Primary image display
+   - Key product information (name, price, stock)
+   - Visual hierarchy for information
+   - Action buttons at card bottom
+
+2. Image Handling
+   - Primary image detection
+   - Image URL construction
+   - Fallback for missing images
+   - Proper image sizing and aspect ratio
+
+### User Data Synchronization Pattern
+1. Database Trigger Pattern
+   ```sql
+   CREATE OR REPLACE FUNCTION public.sync_user_info()
+   RETURNS TRIGGER AS $$
+   BEGIN
+       UPDATE public.profiles
+       SET 
+           email = NEW.email,
+           phone = NEW.phone,
+           display_name = COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.email),
+           avatar_url = NEW.raw_user_meta_data->>'avatar_url',
+           updated_at = NOW()
+       WHERE id = NEW.id;
+       
+       RETURN NEW;
+   END;
+   $$ LANGUAGE plpgsql SECURITY DEFINER;
+   ```
+
+2. Data Fields Pattern
+   - Essential user identification (email, name)
+   - Contact information (phone)
+   - Profile presentation (display_name, avatar)
+   - Fallback values for missing data 
