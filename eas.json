@@ -1,0 +1,26 @@
+{
+    "cli": {
+      "version": ">= 0.52.0"
+    },
+    "build": {
+      "development": {
+        "developmentClient": true,
+        "distribution": "internal"
+      },
+      "preview": {
+        "distribution": "internal"
+      },
+      "production": {
+        "autoIncrement": true
+      }
+    },
+    "submit": {
+      "production": {
+        "ios": {
+          "appleId": "yyaustin@bu.edu",
+          "ascAppId": "6742428273",
+          "appleTeamId": "PJRB3XXQGN"
+        }
+      }
+    }
+  }

@@ -1,15 +1,19 @@
 {
   "expo": {
-    "name": "fresh_home_expo",
-    "slug": "fresh_home_expo",
+    "name": "Fresh Home",
+    "slug": "fresh-home",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./AppIcons/appstore.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.elevatusinc.FreshHome",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +40,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2c6241af-10d8-4b4e-b84e-bdbcc6f7e611"
+      }
     }
   }
 }
