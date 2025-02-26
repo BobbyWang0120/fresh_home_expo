@@ -27,7 +27,11 @@ import { Ionicons } from '@expo/vector-icons';
 // Define the Profile type
 type Profile = {
   id: string;
-  role: 'user' | 'supplier';
+  role: 'user';
+  email: string;
+  phone?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -57,6 +61,8 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [supplierErrorMessage, setSupplierErrorMessage] = useState('');
   const [newAddress, setNewAddress] = useState<Partial<Address>>({
     type: 'home',
     is_default: false,
@@ -106,7 +112,7 @@ export default function ProfileScreen() {
       if (error) throw error;
       setProfile(data);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('错误', error.message);
     }
   };
 
@@ -121,29 +127,77 @@ export default function ProfileScreen() {
       if (error) throw error;
       setAddresses(data);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('错误', error.message);
     }
   };
 
   const handleAuth = async () => {
     try {
+      // Clear any existing error messages
+      setErrorMessage('');
+      setSupplierErrorMessage('');
+      
       setLoading(true);
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (error) throw error;
+        if (error) {
+          setErrorMessage('邮箱或密码不正确，请重试。');
+          return;
+        }
+        
+        // Check if user is a supplier after successful login
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (profileError) {
+          setErrorMessage('获取用户信息失败，请重试。');
+          return;
+        }
+        
+        // If user is a supplier, sign them out and show error message in Chinese
+        if (profileData.role === 'supplier') {
+          await supabase.auth.signOut();
+          setSupplierErrorMessage('供应商账号不允许登录移动应用，请使用供应商网站。');
+          return;
+        }
       } else {
+        // For registration
+        if (!email || !password) {
+          setErrorMessage('请填写所有必填项。');
+          return;
+        }
+        
+        if (password.length < 6) {
+          setErrorMessage('密码长度不能少于6个字符。');
+          return;
+        }
+        
         const { error } = await supabase.auth.signUp({
           email,
           password,
         });
-        if (error) throw error;
-        Alert.alert('Success', 'Account created successfully!');
+        
+        if (error) {
+          if (error.message.includes('email')) {
+            setErrorMessage('邮箱格式不正确或已被注册。');
+          } else {
+            setErrorMessage(`注册失败: ${error.message}`);
+          }
+          return;
+        }
+        
+        setErrorMessage('');
+        // Show success message inline
+        setSupplierErrorMessage('账号创建成功！请检查邮箱完成验证。');
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      setErrorMessage(`操作失败: ${error.message}`);
     } finally {
       setLoading(false);
       setPassword('');
@@ -156,7 +210,7 @@ export default function ProfileScreen() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('错误', error.message);
     } finally {
       setLoading(false);
     }
@@ -268,94 +322,105 @@ export default function ProfileScreen() {
 
   const renderAddressForm = () => (
     <View style={styles.formSection}>
-      <Text style={styles.sectionTitle}>添加新地址</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>添加新地址</Text>
+        <TouchableOpacity
+          style={styles.cancelFormButton}
+          onPress={() => setShowAddressForm(false)}
+        >
+          <Ionicons name="close" size={24} color="#000" />
+        </TouchableOpacity>
+      </View>
       
-      <View style={styles.formRow}>
+      <View style={styles.formRowGroup}>
+        <Text style={styles.formGroupLabel}>联系信息</Text>
+        <View style={styles.formRow}>
+          <TextInput
+            style={[styles.input, styles.halfInput]}
+            placeholder="收件人姓名"
+            value={newAddress.recipient_name}
+            onChangeText={(text) => setNewAddress(prev => ({ ...prev, recipient_name: text }))}
+          />
+          <TextInput
+            style={[styles.input, styles.halfInput]}
+            placeholder="手机号码"
+            value={newAddress.phone}
+            onChangeText={(text) => setNewAddress(prev => ({ ...prev, phone: text }))}
+            keyboardType="phone-pad"
+          />
+        </View>
+      </View>
+
+      <View style={styles.formRowGroup}>
+        <Text style={styles.formGroupLabel}>地址信息</Text>
         <TextInput
-          style={[styles.input, styles.halfInput]}
-          placeholder="收件人姓名"
-          value={newAddress.recipient_name}
-          onChangeText={(text) => setNewAddress(prev => ({ ...prev, recipient_name: text }))}
+          style={styles.input}
+          placeholder="街道地址"
+          value={newAddress.street_address}
+          onChangeText={(text) => setNewAddress(prev => ({ ...prev, street_address: text }))}
         />
+
         <TextInput
-          style={[styles.input, styles.halfInput]}
-          placeholder="手机号码"
-          value={newAddress.phone}
-          onChangeText={(text) => setNewAddress(prev => ({ ...prev, phone: text }))}
-          keyboardType="phone-pad"
+          style={styles.input}
+          placeholder="门牌号 (可选)"
+          value={newAddress.apartment}
+          onChangeText={(text) => setNewAddress(prev => ({ ...prev, apartment: text }))}
+        />
+
+        <View style={styles.formRow}>
+          <TextInput
+            style={[styles.input, styles.halfInput]}
+            placeholder="城市"
+            value={newAddress.city}
+            onChangeText={(text) => setNewAddress(prev => ({ ...prev, city: text }))}
+          />
+          <TextInput
+            style={[styles.input, styles.halfInput]}
+            placeholder="省份"
+            value={newAddress.state}
+            onChangeText={(text) => setNewAddress(prev => ({ ...prev, state: text }))}
+          />
+        </View>
+
+        <TextInput
+          style={styles.input}
+          placeholder="邮政编码"
+          value={newAddress.zip_code}
+          onChangeText={(text) => setNewAddress(prev => ({ ...prev, zip_code: text }))}
+          keyboardType="number-pad"
         />
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="街道地址"
-        value={newAddress.street_address}
-        onChangeText={(text) => setNewAddress(prev => ({ ...prev, street_address: text }))}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="门牌号 (可选)"
-        value={newAddress.apartment}
-        onChangeText={(text) => setNewAddress(prev => ({ ...prev, apartment: text }))}
-      />
-
-      <View style={styles.formRow}>
-        <TextInput
-          style={[styles.input, styles.halfInput]}
-          placeholder="城市"
-          value={newAddress.city}
-          onChangeText={(text) => setNewAddress(prev => ({ ...prev, city: text }))}
-        />
-        <TextInput
-          style={[styles.input, styles.halfInput]}
-          placeholder="省份"
-          value={newAddress.state}
-          onChangeText={(text) => setNewAddress(prev => ({ ...prev, state: text }))}
-        />
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="邮政编码"
-        value={newAddress.zip_code}
-        onChangeText={(text) => setNewAddress(prev => ({ ...prev, zip_code: text }))}
-        keyboardType="number-pad"
-      />
-
-      <View style={styles.formRow}>
-        <TouchableOpacity
-          style={[styles.addressTypeButton, newAddress.type === 'home' && styles.addressTypeButtonActive]}
-          onPress={() => setNewAddress(prev => ({ ...prev, type: 'home' }))}
-        >
-          <Text style={[styles.addressTypeText, newAddress.type === 'home' && styles.addressTypeTextActive]}>家</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.addressTypeButton, newAddress.type === 'work' && styles.addressTypeButtonActive]}
-          onPress={() => setNewAddress(prev => ({ ...prev, type: 'work' }))}
-        >
-          <Text style={[styles.addressTypeText, newAddress.type === 'work' && styles.addressTypeTextActive]}>公司</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.addressTypeButton, newAddress.type === 'other' && styles.addressTypeButtonActive]}
-          onPress={() => setNewAddress(prev => ({ ...prev, type: 'other' }))}
-        >
-          <Text style={[styles.addressTypeText, newAddress.type === 'other' && styles.addressTypeTextActive]}>其他</Text>
-        </TouchableOpacity>
+      <View style={styles.formRowGroup}>
+        <Text style={styles.formGroupLabel}>地址类型</Text>
+        <View style={styles.formRow}>
+          <TouchableOpacity
+            style={[styles.addressTypeButton, newAddress.type === 'home' && styles.addressTypeButtonActive]}
+            onPress={() => setNewAddress(prev => ({ ...prev, type: 'home' }))}
+          >
+            <Text style={[styles.addressTypeText, newAddress.type === 'home' && styles.addressTypeTextActive]}>家</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addressTypeButton, newAddress.type === 'work' && styles.addressTypeButtonActive]}
+            onPress={() => setNewAddress(prev => ({ ...prev, type: 'work' }))}
+          >
+            <Text style={[styles.addressTypeText, newAddress.type === 'work' && styles.addressTypeTextActive]}>公司</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addressTypeButton, newAddress.type === 'other' && styles.addressTypeButtonActive]}
+            onPress={() => setNewAddress(prev => ({ ...prev, type: 'other' }))}
+          >
+            <Text style={[styles.addressTypeText, newAddress.type === 'other' && styles.addressTypeTextActive]}>其他</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.formActions}>
         <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
-          onPress={() => setShowAddressForm(false)}
-        >
-          <Text style={styles.cancelButtonText}>取消</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[styles.button, styles.submitButton]}
           onPress={handleAddAddress}
         >
-          <Text style={styles.submitButtonText}>保存</Text>
+          <Text style={styles.submitButtonText}>保存地址</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -431,31 +496,51 @@ export default function ProfileScreen() {
   if (!session) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={[styles.container, styles.centerContent]}>
           <View style={styles.headerContainer}>
             <Text style={styles.title}>{isLogin ? '登录账号' : '创建账号'}</Text>
             <View style={styles.decorativeLine} />
           </View>
           
           <View style={styles.formContainer}>
+            {supplierErrorMessage ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorMessage}>{supplierErrorMessage}</Text>
+              </View>
+            ) : null}
+            
             <TextInput
-              style={styles.input}
+              style={[styles.input, errorMessage ? styles.inputError : null]}
               placeholder="邮箱地址"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrorMessage('');
+                setSupplierErrorMessage('');
+              }}
               autoCapitalize="none"
               keyboardType="email-address"
               placeholderTextColor="#666666"
             />
             
             <TextInput
-              style={styles.input}
+              style={[styles.input, errorMessage ? styles.inputError : null]}
               placeholder="密码"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrorMessage('');
+                setSupplierErrorMessage('');
+              }}
               secureTextEntry
               placeholderTextColor="#666666"
             />
+            
+            {errorMessage ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorMessage}>{errorMessage}</Text>
+              </View>
+            ) : null}
             
             <TouchableOpacity 
               style={styles.button}
@@ -468,7 +553,11 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             
             <TouchableOpacity 
-              onPress={() => setIsLogin(!isLogin)}
+              onPress={() => {
+                setIsLogin(!isLogin);
+                setErrorMessage('');
+                setSupplierErrorMessage('');
+              }}
               style={styles.switchButton}
             >
               <Text style={styles.switchText}>
@@ -494,40 +583,30 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>基本信息</Text>
             <View style={styles.infoItem}>
               <Text style={styles.label}>邮箱</Text>
-              <Text style={styles.value}>{session.user.email}</Text>
+              <Text style={styles.value}>{profile?.email || session.user.email}</Text>
             </View>
             
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>角色</Text>
-              <Text style={styles.value}>
-                {profile?.role === 'supplier' ? '供应商' : '用户'}
-              </Text>
-            </View>
-
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>用户 ID</Text>
-              <Text style={styles.value}>{session.user.id}</Text>
-            </View>
+            {profile?.display_name && (
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>用户名</Text>
+                <Text style={styles.value}>{profile.display_name}</Text>
+              </View>
+            )}
+            
+            {profile?.phone && (
+              <View style={styles.infoItem}>
+                <Text style={styles.label}>手机号码</Text>
+                <Text style={styles.value}>{profile.phone}</Text>
+              </View>
+            )}
             
             <View style={styles.infoItem}>
-              <Text style={styles.label}>最近登录</Text>
+              <Text style={styles.label}>注册时间</Text>
               <Text style={styles.value}>
-                {new Date(session.user.last_sign_in_at || '').toLocaleString()}
+                {new Date(profile?.created_at || '').toLocaleDateString('zh-CN')}
               </Text>
             </View>
           </View>
-
-          {profile?.role === 'supplier' && (
-            <View style={styles.actionSection}>
-              <Text style={styles.sectionTitle}>供应商功能</Text>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => router.push('/product/new')}
-              >
-                <Text style={styles.actionButtonText}>添加新商品</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
 
         {showAddressForm ? renderAddressForm() : renderAddresses()}
@@ -556,6 +635,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  centerContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 50, // Add some padding to adjust vertical position
   },
   headerContainer: {
     alignItems: 'center',
@@ -624,14 +708,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E5E5',
   },
-  actionSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -650,19 +726,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
     fontWeight: '500',
-  },
-  actionButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#000000',
-    fontSize: 16,
-    fontWeight: '600',
   },
   signOutButton: {
     backgroundColor: '#000000',
@@ -793,20 +856,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 20,
   },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-  },
   submitButton: {
     backgroundColor: '#000',
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  formRowGroup: {
+    marginBottom: 20,
+  },
+  formGroupLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 12,
+  },
+  cancelFormButton: {
+    padding: 8,
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.05)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF3B30',
+  },
+  errorMessage: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  inputError: {
+    borderColor: '#FF3B30',
   },
 });
