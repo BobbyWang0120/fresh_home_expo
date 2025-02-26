@@ -275,25 +275,21 @@ export default function HomeScreen() {
           resizeMode="cover"
         />
         <View style={styles.productInfo}>
-          <View style={styles.productHeader}>
-            <View style={styles.productTitleContainer}>
-              <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.productOrigin}>{item.origin}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.addToCartButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                addToCart(item.id);
-              }}
-            >
-              <Ionicons name="add-circle" size={28} color="#000000" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          <Text style={styles.productOrigin}>{item.origin}</Text>
           <View style={styles.priceContainer}>
             <Text style={styles.price}>¥{item.discounted_price.toFixed(2)}</Text>
             <Text style={styles.unit}>/{item.unit}</Text>
           </View>
+          <TouchableOpacity 
+            style={styles.addToCartButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              addToCart(item.id);
+            }}
+          >
+            <Ionicons name="add-circle" size={24} color="#000000" />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -333,6 +329,8 @@ export default function HomeScreen() {
                     data={products}
                     renderItem={renderProductItem}
                     keyExtractor={item => item.id}
+                    numColumns={2}
+                    columnWrapperStyle={styles.productRow}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.productsList}
                     refreshControl={
@@ -413,7 +411,8 @@ const styles = StyleSheet.create({
     borderRightColor: '#F0F0F0',
   },
   categoriesList: {
-    paddingVertical: 12,
+    paddingTop: 0, // Align with products section
+    paddingBottom: 12,
   },
   categoryItem: {
     paddingHorizontal: 16,
@@ -440,6 +439,10 @@ const styles = StyleSheet.create({
   },
   productsList: {
     padding: 12,
+    paddingTop: 12, // Align with categories
+  },
+  productRow: {
+    justifyContent: 'space-between',
   },
   productCard: {
     backgroundColor: '#FFFFFF',
@@ -451,48 +454,42 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     overflow: 'hidden',
+    width: '48%', // Allow two columns with some spacing
   },
   productImage: {
     width: '100%',
-    aspectRatio: 16/9,
+    aspectRatio: 1, // Square images look better in grid
     backgroundColor: '#F5F5F5',
   },
   productInfo: {
-    padding: 12,
-  },
-  productHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  productTitleContainer: {
-    flex: 1,
-    marginRight: 12,
+    padding: 10,
+    position: 'relative',
   },
   productName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: '#000000',
     marginBottom: 4,
-    lineHeight: 22,
+    lineHeight: 18,
+    height: 36, // Limit to 2 lines
   },
   productOrigin: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666666',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: 8,
+    marginTop: 4,
   },
   price: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
   },
   unit: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666666',
     marginLeft: 2,
   },
@@ -522,6 +519,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   addToCartButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
     padding: 4,
   },
 });
