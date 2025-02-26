@@ -250,7 +250,7 @@ export default function HomeScreen() {
         styles.categoryItem,
         selectedCategory === item.id && styles.categoryItemSelected
       ]}
-      onPress={() => setSelectedCategory(selectedCategory === item.id ? ALL_CATEGORY : item.id)}
+      onPress={() => setSelectedCategory(item.id)}
     >
       <Text style={[
         styles.categoryText,
@@ -312,8 +312,8 @@ export default function HomeScreen() {
                 <View style={styles.categoriesContainer}>
                   <FlatList
                     data={[
-                      { id: ALL_CATEGORY, name: 'All' },
-                      { id: DISCOUNTED_CATEGORY, name: 'Discounted' },
+                      { id: ALL_CATEGORY, name: '全部' },
+                      { id: DISCOUNTED_CATEGORY, name: '打折' },
                       ...categories
                     ]}
                     renderItem={renderCategoryItem}
