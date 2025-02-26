@@ -50,6 +50,7 @@ export default function OrdersScreen() {
           loadOrders(userId);
         } else {
           setOrders([]);
+          setLoading(false);
         }
       }
     });
@@ -72,6 +73,7 @@ export default function OrdersScreen() {
           await loadOrders(userId);
         } else {
           setOrders([]);
+          setLoading(false);
         }
       };
 
