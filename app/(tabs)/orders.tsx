@@ -24,12 +24,11 @@ interface Order {
   shipping_fee: number;
   notes?: string;
   user_id: string;
-  user_email?: string;
 }
 
 interface Profile {
   id: string;
-  role: 'user' | 'supplier';
+  role: 'user';
 }
 
 export default function OrdersScreen() {
@@ -37,19 +36,20 @@ export default function OrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // 监听认证状态变化
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const userId = session?.user?.id || null;
+      setIsAuthenticated(!!userId);
+      
       if (userId !== currentUserId) {
         setCurrentUserId(userId);
         if (userId) {
-          loadUserProfile(userId);
+          loadOrders(userId);
         } else {
           setOrders([]);
-          setUserProfile(null);
         }
       }
     });
@@ -66,99 +66,32 @@ export default function OrdersScreen() {
         const { data: { user } } = await supabase.auth.getUser();
         const userId = user?.id || null;
         
+        setIsAuthenticated(!!userId);
+        
         if (userId) {
-          await loadUserProfile(userId);
+          await loadOrders(userId);
         } else {
           setOrders([]);
-          setUserProfile(null);
-          router.push('/(tabs)/profile');
         }
       };
 
       checkAndLoadOrders();
-    }, [])  // Remove currentUserId dependency to ensure refresh on every focus
+    }, [])
   );
 
-  const loadUserProfile = async (userId: string) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      setUserProfile(profile);
-      loadOrders(profile.role);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      Alert.alert('错误', '加载用户信息失败');
-    }
-  };
-
-  const loadOrders = async (role: 'user' | 'supplier') => {
+  const loadOrders = async (userId: string) => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        setOrders([]);
-        router.push('/(tabs)/profile');
-        return;
-      }
-
-      // 基本订单查询
-      let query = supabase
+      // 获取用户订单
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      // 如果是普通用户，只显示自己的订单
-      if (role === 'user') {
-        query = query.eq('user_id', user.id);
-      }
-
-      const { data: ordersData, error: ordersError } = await query;
-
       if (ordersError) throw ordersError;
-
-      // 如果是供应商，需要获取用户邮箱
-      if (role === 'supplier' && ordersData) {
-        // 获取所有订单相关的用户ID
-        const userIds = [...new Set(ordersData.map(order => order.user_id))];
-        
-        // 为每个用户ID获取邮箱
-        const emailPromises = userIds.map(async (userId) => {
-          const { data } = await supabase
-            .from('profiles')
-            .select('email, display_name')
-            .eq('id', userId)
-            .single();
-          return { 
-            userId, 
-            email: data?.email,
-            displayName: data?.display_name 
-          };
-        });
-
-        const userEmails = await Promise.all(emailPromises);
-        const userEmailMap = new Map(
-          userEmails.map(({ userId, email, displayName }) => [
-            userId, 
-            displayName || email || '未知用户'
-          ])
-        );
-
-        // 将用户邮箱添加到订单数据中
-        const ordersWithUserInfo = ordersData.map(order => ({
-          ...order,
-          user_email: userEmailMap.get(order.user_id)
-        }));
-
-        setOrders(ordersWithUserInfo);
-      } else {
-        setOrders(ordersData);
-      }
+      setOrders(ordersData || []);
     } catch (error) {
       console.error('Error loading orders:', error);
       Alert.alert('错误', '加载订单失败');
@@ -170,8 +103,10 @@ export default function OrdersScreen() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    if (userProfile) {
-      loadOrders(userProfile.role);
+    if (currentUserId) {
+      loadOrders(currentUserId);
+    } else {
+      setRefreshing(false);
     }
   };
 
@@ -213,12 +148,6 @@ export default function OrdersScreen() {
         </View>
       </View>
 
-      {userProfile?.role === 'supplier' && (
-        <View style={styles.userInfo}>
-          <Text style={styles.userEmail}>买家: {item.user_email || '未知用户'}</Text>
-        </View>
-      )}
-
       <View style={styles.orderDetails}>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>订单金额</Text>
@@ -242,6 +171,21 @@ export default function OrdersScreen() {
     </TouchableOpacity>
   );
 
+  // 未登录状态的提示UI
+  const renderNotLoggedIn = () => (
+    <View style={styles.notLoggedInContainer}>
+      <Ionicons name="lock-closed-outline" size={64} color="#ccc" />
+      <Text style={styles.notLoggedInTitle}>请先登录</Text>
+      <Text style={styles.notLoggedInText}>登录后查看您的订单信息</Text>
+      <TouchableOpacity 
+        style={styles.loginButton}
+        onPress={() => router.push('/(tabs)/profile')}
+      >
+        <Text style={styles.loginButtonText}>前往登录</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
@@ -252,12 +196,21 @@ export default function OrdersScreen() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>我的订单</Text>
+        </View>
+        {renderNotLoggedIn()}
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {userProfile?.role === 'supplier' ? '所有订单' : '我的订单'}
-        </Text>
+        <Text style={styles.headerTitle}>我的订单</Text>
       </View>
 
       <FlatList
@@ -329,16 +282,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  userInfo: {
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#666666',
-  },
   orderDetails: {
     marginBottom: 12,
   },
@@ -372,5 +315,35 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666666',
+  },
+  notLoggedInContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  notLoggedInTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#000',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  notLoggedInText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  loginButton: {
+    backgroundColor: '#000',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
